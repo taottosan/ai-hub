@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Provider Explorer — Memory Platform Academy</title>
+<style>
+  :root {
+    --bg: #0b0d14;
+    --surface: #12151e;
+    --card: #181c28;
+    --border: #262c3d;
+    --text: #e2e6ef;
+    --text-dim: #8b91a3;
+    --accent-memory: #6c8cff;
+    --accent-knowledge: #52d59a;
+    --gold: #f5c842;
+    --green: #52d59a;
+    --blue: #6c8cff;
+    --orange: #f59e42;
+    --red: #f05a5a;
+    --purple: #a78bfa;
+    --teal: #2dd4bf;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6c8cff, #a78bfa, #52d59a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+  header p {
+    color: var(--text-dim);
+    font-size: 1.1rem;
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Filter bar */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+  .filter-btn {
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .filter-btn:hover { border-color: var(--accent-memory); color: var(--text); }
+  .filter-btn.active {
+    background: var(--accent-memory);
+    border-color: var(--accent-memory);
+    color: #fff;
+  }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+  }
+  .card:hover {
+    border-color: var(--accent-memory);
+    box-shadow: 0 8px 32px rgba(108,140,255,0.1);
+    transform: translateY(-2px);
+  }
+  .card-header {
+    padding: 1.25rem 1.25rem 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .card-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+  .card-name .subtitle {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--text-dim);
+    display: block;
+    margin-top: 0.15rem;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-gold { background: rgba(245,200,66,0.15); color: var(--gold); }
+  .badge-green { background: rgba(82,213,154,0.15); color: var(--green); }
+  .badge-blue { background: rgba(108,140,255,0.15); color: var(--blue); }
+  .badge-orange { background: rgba(245,158,66,0.15); color: var(--orange); }
+  .badge-purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+  .badge-teal { background: rgba(45,212,191,0.15); color: var(--teal); }
+  .badge-red { background: rgba(240,90,90,0.15); color: var(--red); }
+  .badge-frozen { background: rgba(139,145,163,0.15); color: var(--text-dim); }
+
+  .card-body {
+    padding: 0 1.25rem 0.75rem;
+  }
+
+  /* Metrics row */
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .metric {
+    display: flex;
+    flex-direction: column;
+  }
+  .metric-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    margin-bottom: 0.15rem;
+  }
+  .metric-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  /* Attribute pills */
+  .attrs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+  }
+  .attr-pill {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 4px;
+    background: rgba(139,145,163,0.1);
+    border: 1px solid rgba(139,145,163,0.2);
+    color: var(--text-dim);
+  }
+  .attr-pill.mem { border-color: rgba(108,140,255,0.3); color: var(--blue); }
+  .attr-pill.know { border-color: rgba(82,213,154,0.3); color: var(--green); }
+
+  /* Expandable section */
+  .card-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.3s ease;
+    padding: 0 1.25rem;
+  }
+  .card.expanded .card-details {
+    max-height: 600px;
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  .card-details h4 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 0.75rem 0 0.35rem;
+  }
+  .card-details h4:first-child { margin-top: 0; }
+  .card-details p, .card-details ul {
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .card-details ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  .card-details ul li::before {
+    content: "› ";
+    color: var(--accent-memory);
+  }
+  .card-details code {
+    font-size: 0.8rem;
+    background: rgba(108,140,255,0.08);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    color: var(--accent-memory);
+  }
+
+  .cap-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+  }
+  .cap-item {
+    font-size: 0.78rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: rgba(108,140,255,0.08);
+    border: 1px solid rgba(108,140,255,0.15);
+    color: var(--blue);
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+  }
+  .cap-item.know-cap {
+    background: rgba(82,213,154,0.08);
+    border-color: rgba(82,213,154,0.15);
+    color: var(--green);
+  }
+
+  .expand-hint {
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border);
+    transition: color 0.2s;
+  }
+  .card:hover .expand-hint { color: var(--accent-memory); }
+  .card.expanded .expand-hint { display: none; }
+
+  /* Lifecycle bar */
+  .lifecycle-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .lifecycle-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .lifecycle-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+  .lifecycle-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* When-to-use box */
+  .usecase-box {
+    background: rgba(108,140,255,0.06);
+    border-left: 3px solid var(--accent-memory);
+    padding: 0.75rem;
+    border-radius: 0 8px 8px 0;
+    margin-top: 0.5rem;
+  }
+  .usecase-box.know-box {
+    border-left-color: var(--accent-knowledge);
+    background: rgba(82,213,154,0.06);
+  }
+
+  /* Conformance heat */
+  .conformance-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .pass-dot { color: var(--green); }
+  .fail-dot { color: var(--red); }
+
+  /* Hidden filter */
+  .card.hidden { display: none; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.8rem; }
+    .metrics { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Provider Explorer</h1>
+    <p>Interactive overview of all 6 memory and knowledge providers in the Memory Platform. Click any card to expand details.</p>
+  </header>
+
+  <!-- Legend -->
+  <div class="legend">
+    <span class="legend-item"><span class="legend-dot" style="background:var(--gold)"></span> Gold Standard</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> MemoryProvider</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> KnowledgeProvider</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--text-dim)"></span> Frozen v1</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--orange)"></span> Active Dev</span>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">All Providers</button>
+    <button class="filter-btn" data-filter="memory">MemoryProviders</button>
+    <button class="filter-btn" data-filter="knowledge">KnowledgeProviders</button>
+    <button class="filter-btn" data-filter="active">Active</button>
+    <button class="filter-btn" data-filter="frozen">Frozen v1</button>
+    <button class="filter-btn" data-filter="gold">Gold Standard</button>
+  </div>
+
+  <div class="grid" id="grid">
+
+    <!-- ===================== INMEMORY ===================== -->
+    <div class="card" data-type="memory" data-status="gold" data-name="InMemory">
+      <div class="card-header">
+        <div class="card-name">
+          InMemory
+          <span class="subtitle">providers/mock/memory_mock.py</span>
+        </div>
+        <div>
+          <span class="badge badge-gold">★ Gold</span>
+          <span class="badge badge-blue">MemoryProvider</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-label">Role</span>
+            <span class="metric-value">Gold Reference</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Conformance</span>
+            <span class="metric-value conformance-score"><span class="pass-dot">●</span> 15/15 (T01-T15)</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Lifecycle</span>
+            <span class="metric-value" style="color:var(--gold)">Gold Standard</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Persistence</span>
+            <span class="metric-value" style="color:var(--text-dim)">None (in-memory)</span>
+          </div>
+        </div>
+        <div class="attrs">
+          <span class="attr-pill mem">store</span>
+          <span class="attr-pill mem">query</span>
+          <span class="attr-pill mem">update</span>
+          <span class="attr-pill mem">delete</span>
+          <span class="attr-pill mem">get</span>
+        </div>
+        <div class="lifecycle-bar">
+          <span class="lifecycle-label" style="color:var(--gold)">Gold</span>
+          <div class="lifecycle-track"><div class="lifecycle-fill" style="width:100%;background:var(--gold)"></div></div>
+          <span class="lifecycle-label" style="color:var(--text-dim)">L3</span>
+        </div>
+      </div>
+      <div class="card-details">
+        <h4>Interface</h4>
+        <p><code>MemoryProvider</code> — the canonical ABC that all memory adapters must implement.</p>
+        <div class="cap-list">
+          <span class="cap-item">store()</span>
+          <span class="cap-item">query()</span>
+          <span class="cap-item">update()</span>
+          <span class="cap-item">delete()</span>
+          <span class="cap-item">get()</span>
+          <span class="cap-item">health()</span>
+          <span class="cap-item">capabilities()</span>
+        </div>
+
+        <h4>Conformance Suite</h4>
+        <p>T01–T15: health_ok, health_format, store_basic, store_with_metadata, query_semantic, query_empty, query_with_filters, update_content, update_preserves_id, delete_basic, delete_nonexistent, capabilities_declared, error_on_invalid, latency_budget, capabilities_type.</p>
+
+        <h4>Lifecycle Status</h4>
+        <p><strong style="color:var(--gold)">Gold Standard — L3 (Production)</strong>. The ground truth reference. Every other memory provider must pass the same T01–T15 conformance suite. Changes to <code>MemoryProvider</code> ABC or InMemory implementation require an RFC.</p>
+
+        <h4>When to use</h4>
+        <div class="usecase-box">
+          <strong>Development &amp; Testing:</strong> Use InMemory as your go-to provider during development and unit tests. No dependencies, no configuration, zero latency. It validates behaviour before you plug in a persistent backend. Also acts as the contract enforcer — if it works on InMemory but fails on Mem0, the adapter is the problem, not your code.
+        </div>
+      </div>
+      <div class="expand-hint">▼ click to expand</div>
+    </div>
+
+    <!-- ===================== MEM0 ===================== -->
+    <div class="card" data-type="memory" data-status="active" data-name="Mem0">
+      <div class="card-header">
+        <div class="card-name">
+          Mem0
+          <span class="subtitle">providers/mem0/adapter.py</span>
+        </div>
+        <div>
+          <span class="badge badge-blue">MemoryProvider</span>
+          <span class="badge badge-green">L3</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-label">Role</span>
+            <span class="metric-value">Production Memory</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Conformance</span>
+            <span class="metric-value conformance-score"><span class="pass-dot">●</span> 15/15 (T01-T15)</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Lifecycle</span>
+            <span class="metric-value" style="color:var(--green)">Active — L3</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Backend</span>
+            <span class="metric-value" style="color:var(--text-dim)">Mem0 API (external)</span>
+          </div>
+        </div>
+        <div class="attrs">
+          <span class="attr-pill mem">store</span>
+          <span class="attr-pill mem">query</span>
+          <span class="attr-pill mem">update</span>
+          <span class="attr-pill mem">delete</span>
+          <span class="attr-pill mem">get</span>
+        </div>
+        <div class="lifecycle-bar">
+          <span class="lifecycle-label" style="color:var(--text-dim)">L1</span>
+          <div class="lifecycle-track"><div class="lifecycle-fill" style="width:100%;background:var(--green)"></div></div>
+          <span class="lifecycle-label" style="color:var(--green)">L3</span>
+        </div>
+      </div>
+      <div class="card-details">
+        <h4>Interface</h4>
+        <p><code>MemoryProvider</code> — full store/query/update/delete/get support. Identical method signature to InMemory. Tested against a mock Mem0 server at <code>http://127.0.0.1:3003</code>.</p>
+        <div class="cap-list">
+          <span class="cap-item">store()</span>
+          <span class="cap-item">query()</span>
+          <span class="cap-item">update()</span>
+          <span class="cap-item">delete()</span>
+          <span class="cap-item">get()</span>
+          <span class="cap-item">health()</span>
+          <span class="cap-item">capabilities()</span>
+        </div>
+
+        <h4>Conformance Suite</h4>
+        <p>All 15 tests (T01–T15) pass. Identical test class to InMemory's, run against the Mem0 adapter + mock server. No regressions allowed — if InMemory passes but Mem0 doesn't, the adapter is blocked from production.</p>
+
+        <h4>Lifecycle Status</h4>
+        <p><strong style="color:var(--green)">Active — L3 (Production)</strong>. Fully conformant memory provider for production workloads. Uses the external Mem0 API which provides persistent, queryable memory storage. Top-tier maturity alongside InMemory.</p>
+
+        <h4>When to use</h4>
+        <div class="usecase-box">
+          <strong>Persistent production memory:</strong> When you need memory that survives restarts, survives across sessions, and supports semantic querying with metadata filtering. Mem0 is the primary persistent MemoryProvider for production AI agents. Choose it over InMemory when data durability matters. Requires a running Mem0 API endpoint.
+        </div>
+      </div>
+      <div class="expand-hint">▼ click to expand</div>
+    </div>
+
+    <!-- ===================== HONCHO ===================== -->
+    <div class="card" data-type="memory" data-status="active" data-name="Honcho">
+      <div class="card-header">
+        <div class="card-name">
+          Honcho
+          <span class="subtitle">providers/honcho/adapter.py</span>
+        </div>
+        <div>
+          <span class="badge badge-blue">MemoryProvider</span>
+          <span class="badge badge-orange">L2</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-label">Role</span>
+            <span class="metric-value">Alternative Memory</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Conformance</span>
+            <span class="metric-value conformance-score"><span class="pass-dot">●</span> 15/15 (T01-T15)</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Lifecycle</span>
+            <span class="metric-value" style="color:var(--orange)">Active — L2</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Backend</span>
+            <span class="metric-value" style="color:var(--text-dim)">Honcho API (external)</span>
+          </div>
+        </div>
+        <div class="attrs">
+          <span class="attr-pill mem">store</span>
+          <span class="attr-pill mem">query</span>
+          <span class="attr-pill mem">update</span>
+          <span class="attr-pill mem">delete</span>
+          <span class="attr-pill mem">get</span>
+        </div>
+        <div class="lifecycle-bar">
+          <span class="lifecycle-label" style="color:var(--text-dim)">L1</span>
+          <div class="lifecycle-track"><div class="lifecycle-fill" style="width:66%;background:var(--orange)"></div></div>
+          <span class="lifecycle-label" style="color:var(--orange)">L2</span>
+        </div>
+      </div>
+      <div class="card-details">
+        <h4>Interface</h4>
+        <p><code>MemoryProvider</code> — full store/query/update/delete/get support. Same contract as InMemory and Mem0. Tested against a mock Honcho server at <code>http://127.0.0.1:3004</code>.</p>
+        <div class="cap-list">
+          <span class="cap-item">store()</span>
+          <span class="cap-item">query()</span>
+          <span class="cap-item">update()</span>
+          <span class="cap-item">delete()</span>
+          <span class="cap-item">get()</span>
+          <span class="cap-item">health()</span>
+          <span class="cap-item">capabilities()</span>
+        </div>
+
+        <h4>Conformance Suite</h4>
+        <p>All 15 tests (T01–T15) pass. Same test class as InMemory/Mem0. Semantic query, metadata filtering, update, delete, and error handling all verified.</p>
+
+        <h4>Lifecycle Status</h4>
+        <p><strong style="color:var(--orange)">Active — L2 (Staging)</strong>. Fully conformant but less battle-tested than Mem0. Honcho provides self-hostable memory infrastructure with a similar feature set. Suitable for staging and evaluation before promoting to full L3.</p>
+
+        <h4>When to use</h4>
+        <div class="usecase-box">
+          <strong>Self-hosted alternative or multi-provider redundancy:</strong> Use Honcho when you want a self-hosted memory backend that you control entirely. It's also valuable as a secondary memory provider for redundancy or data locality. Consider promoting to L3 once production experience accumulates. Requires a running Honcho API endpoint.
+        </div>
+      </div>
+      <div class="expand-hint">▼ click to expand</div>
+    </div>
+
+    <!-- ===================== OBSIDIAN ===================== -->
+    <div class="card" data-type="knowledge" data-status="frozen" data-name="Obsidian">
+      <div class="card-header">
+        <div class="card-name">
+          Obsidian
+          <span class="subtitle">providers/obsidian/adapter.py</span>
+        </div>
+        <div>
+          <span class="badge badge-frozen">Frozen v1</span>
+          <span class="badge badge-green">KnowledgeProvider</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-label">Role</span>
+            <span class="metric-value">Vault Knowledge</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Conformance</span>
+            <span class="metric-value conformance-score"><span class="pass-dot">●</span> 43/43 (TK01-TK43)</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Lifecycle</span>
+            <span class="metric-value" style="color:var(--text-dim)">Frozen v1</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Backend</span>
+            <span class="metric-value" style="color:var(--text-dim)">Obsidian vault (local)</span>
+          </div>
+        </div>
+        <div class="attrs">
+          <span class="attr-pill know">search</span>
+          <span class="attr-pill know">get</span>
+          <span class="attr-pill know">list</span>
+          <span class="attr-pill know">read</span>
+        </div>
+        <div class="lifecycle-bar">
+          <span class="lifecycle-label" style="color:var(--text-dim)">Frozen</span>
+          <div class="lifecycle-track"><div class="lifecycle-fill" style="width:100%;background:var(--text-dim)"></div></div>
+          <span class="lifecycle-label" style="color:var(--text-dim)">v1</span>
+        </div>
+      </div>
+      <div class="card-details">
+        <h4>Interface</h4>
+        <p><code>KnowledgeProvider</code> — the ABC for read-access to structured knowledge stores. Different from MemoryProvider: no store/update/delete, focused on search, list, and retrieval.</p>
+        <div class="cap-list">
+          <span class="cap-item know-cap">search()</span>
+          <span class="cap-item know-cap">get()</span>
+          <span class="cap-item know-cap">list()</span>
+          <span class="cap-item know-cap">health()</span>
+          <span class="cap-item know-cap">capabilities()</span>
+        </div>
+
+        <h4>Conformance Suite</h4>
+        <p>TK01–TK43: 43 tests covering health, listing, searching (by tags, content, path), filtering, frontmatter metadata, cross-file concept search, incremental reads, pagination, error handling, edge cases (empty vault, special characters), and latency budgets. The largest conformance suite of any provider.</p>
+
+        <h4>Lifecycle Status</h4>
+        <p><strong style="color:var(--text-dim)">Frozen v1</strong>. Reference implementation is locked. The interface, conformance tests, and behaviour are stable. No changes permitted without an RFC. The vault-access research is complete and frozen.</p>
+
+        <h4>When to use</h4>
+        <div class="usecase-box know-box">
+          <strong>Reading structured knowledge from an Obsidian vault:</strong> Use Obsidian when you need your AI agent to search, list, and retrieve markdown notes from a local Obsidian vault. It supports frontmatter metadata, tag-based filtering, cross-file content search, and paginated reads. Does NOT support writing — this is a read-only knowledge provider by design. Ideal for agents that need access to a curated knowledge base.
+        </div>
+      </div>
+      <div class="expand-hint">▼ click to expand</div>
+    </div>
+
+    <!-- ===================== SKILLS ===================== -->
+    <div class="card" data-type="knowledge" data-status="frozen" data-name="Skills">
+      <div class="card-header">
+        <div class="card-name">
+          Skills
+          <span class="subtitle">providers/skills/adapter.py</span>
+        </div>
+        <div>
+          <span class="badge badge-frozen">Frozen v1</span>
+          <span class="badge badge-green">KnowledgeProvider</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-label">Role</span>
+            <span class="metric-value">Procedural Knowledge</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Conformance</span>
+            <span class="metric-value conformance-score"><span class="pass-dot">●</span> 9/9 (TK01-TK09)</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Lifecycle</span>
+            <span class="metric-value" style="color:var(--text-dim)">Frozen v1</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Backend</span>
+            <span class="metric-value" style="color:var(--text-dim)">SKILL.md files (local)</span>
+          </div>
+        </div>
+        <div class="attrs">
+          <span class="attr-pill know">search</span>
+          <span class="attr-pill know">get</span>
+          <span class="attr-pill know">list</span>
+        </div>
+        <div class="lifecycle-bar">
+          <span class="lifecycle-label" style="color:var(--text-dim)">Frozen</span>
+          <div class="lifecycle-track"><div class="lifecycle-fill" style="width:100%;background:var(--text-dim)"></div></div>
+          <span class="lifecycle-label" style="color:var(--text-dim)">v1</span>
+        </div>
+      </div>
+      <div class="card-details">
+        <h4>Interface</h4>
+        <p><code>KnowledgeProvider</code> — reads structured skill documents (SKILL.md files with YAML frontmatter). Focused on search, listing, and retrieval of procedural knowledge.</p>
+        <div class="cap-list">
+          <span class="cap-item know-cap">search()</span>
+          <span class="cap-item know-cap">get()</span>
+          <span class="cap-item know-cap">list()</span>
+          <span class="cap-item know-cap">health()</span>
+          <span class="cap-item know-cap">capabilities()</span>
+        </div>
+
+        <h4>Conformance Suite</h4>
+        <p>TK01–TK09: health_ok, list_all, list_filtered, get_by_id, get_nonexistent, search_terms, search_cross_file, frontmatter_tags, capabilities.</p>
+
+        <h4>Lifecycle Status</h4>
+        <p><strong style="color:var(--text-dim)">Frozen v1</strong>. Minimal but complete. Provides the ability to search, list, and retrieve skill documentation from the local filesystem. Frozen because the SKILL.md format and interface are stable.</p>
+
+        <h4>When to use</h4>
+        <div class="usecase-box know-box">
+          <strong>Accessing agent skill/procedure documentation:</strong> Use Skills when your AI agent needs to look up its own procedural knowledge — SKILL.md files that document how to perform specific tasks. Unlike Obsidian (general vault knowledge), Skills is specifically for agent-internal operating procedures. It's a lightweight, file-system-backed knowledge provider.
+        </div>
+      </div>
+      <div class="expand-hint">▼ click to expand</div>
+    </div>
+
+    <!-- ===================== ARCHIVE ===================== -->
+    <div class="card" data-type="knowledge" data-status="frozen" data-name="Archive">
+      <div class="card-header">
+        <div class="card-name">
+          Archive
+          <span class="subtitle">providers/archive/adapter.py</span>
+        </div>
+        <div>
+          <span class="badge badge-frozen">Frozen v1</span>
+          <span class="badge badge-green">KnowledgeProvider</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-label">Role</span>
+            <span class="metric-value">Historical Memory</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Conformance</span>
+            <span class="metric-value conformance-score"><span class="pass-dot">●</span> 21/21 (TA01-TA21)</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Lifecycle</span>
+            <span class="metric-value" style="color:var(--text-dim)">Frozen v1</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Backend</span>
+            <span class="metric-value" style="color:var(--text-dim)">JSONL archive (local)</span>
+          </div>
+        </div>
+        <div class="attrs">
+          <span class="attr-pill know">search</span>
+          <span class="attr-pill know">get</span>
+          <span class="attr-pill know">list</span>
+          <span class="attr-pill know">store</span>
+        </div>
+        <div class="lifecycle-bar">
+          <span class="lifecycle-label" style="color:var(--text-dim)">Frozen</span>
+          <div class="lifecycle-track"><div class="lifecycle-fill" style="width:100%;background:var(--text-dim)"></div></div>
+          <span class="lifecycle-label" style="color:var(--text-dim)">v1</span>
+        </div>
+      </div>
+      <div class="card-details">
+        <h4>Interface</h4>
+        <p><code>KnowledgeProvider</code> — the only KnowledgeProvider that also supports <code>store()</code>. Provides read/write access to an archived memory store for historical records (JSONL format). Designed as a write-once, read-many cold storage layer.</p>
+        <div class="cap-list">
+          <span class="cap-item know-cap">search()</span>
+          <span class="cap-item know-cap">get()</span>
+          <span class="cap-item know-cap">list()</span>
+          <span class="cap-item know-cap">store()</span>
+          <span class="cap-item know-cap">health()</span>
+          <span class="cap-item know-cap">capabilities()</span>
+        </div>
+
+        <h4>Conformance Suite</h4>
+        <p>TA01–TA21: 21 tests covering health, storing memories, retrieval, date-based filtering, importance filtering, tag filtering, partial content matching, pagination, error handling (empty store, malformed entries, nonexistent lookups), and read-after-write consistency. See <a href="https://github.com/factoria-org/memory-platform/blob/main/adr/ADR-0012-archive-role.md" style="color:var(--accent-memory)">ADR-0012</a>.</p>
+
+        <h4>Lifecycle Status</h4>
+        <p><strong style="color:var(--text-dim)">Frozen v1</strong>. Archive was the last provider frozen. It fills the gap for historical/cold memory — records that should persist but aren't needed for daily semantic queries. The <code>store()</code> capability makes it unique among KnowledgeProviders.</p>
+
+        <h4>When to use</h4>
+        <div class="usecase-box know-box">
+          <strong>Cold storage for historical memories:</strong> Use Archive when you need to persist memory records that are no longer in active use but must be retained for audit, compliance, or historical reference. It's a write-once, read-rarely layer — the attic of the memory platform. Unlike InMemory/Mem0 (hot storage for active agent memory), Archive is for data that should outlive sessions but only needs occasional retrieval. Supports filtering by date, importance, and tags.
+        </div>
+      </div>
+      <div class="expand-hint">▼ click to expand</div>
+    </div>
+
+  </div>
+
+  <!-- Summary table -->
+  <section style="margin-top: 2rem;">
+    <h2 style="font-size:1.4rem; margin-bottom:1rem; text-align:center;">Quick Reference</h2>
+    <div style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="text-align:left; padding:0.6rem 0.8rem; color:var(--text-dim);">Provider</th>
+            <th style="text-align:left; padding:0.6rem 0.8rem; color:var(--text-dim);">Role</th>
+            <th style="text-align:left; padding:0.6rem 0.8rem; color:var(--text-dim);">Interface</th>
+            <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--text-dim);">Tests</th>
+            <th style="text-align:left; padding:0.6rem 0.8rem; color:var(--text-dim);">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.6rem 0.8rem; font-weight:600;">InMemory</td>
+            <td style="padding:0.6rem 0.8rem; color:var(--blue);">Gold Reference</td>
+            <td style="padding:0.6rem 0.8rem;"><code>MemoryProvider</code></td>
+            <td style="padding:0.6rem 0.8rem; text-align:center; color:var(--green);">15/15</td>
+            <td style="padding:0.6rem 0.8rem;"><span class="badge badge-gold">Gold</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.6rem 0.8rem; font-weight:600;">Mem0</td>
+            <td style="padding:0.6rem 0.8rem; color:var(--blue);">Production Memory</td>
+            <td style="padding:0.6rem 0.8rem;"><code>MemoryProvider</code></td>
+            <td style="padding:0.6rem 0.8rem; text-align:center; color:var(--green);">15/15</td>
+            <td style="padding:0.6rem 0.8rem;"><span class="badge badge-green">Active L3</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.6rem 0.8rem; font-weight:600;">Honcho</td>
+            <td style="padding:0.6rem 0.8rem; color:var(--blue);">Alternative Memory</td>
+            <td style="padding:0.6rem 0.8rem;"><code>MemoryProvider</code></td>
+            <td style="padding:0.6rem 0.8rem; text-align:center; color:var(--green);">15/15</td>
+            <td style="padding:0.6rem 0.8rem;"><span class="badge badge-orange">Active L2</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.6rem 0.8rem; font-weight:600;">Obsidian</td>
+            <td style="padding:0.6rem 0.8rem; color:var(--green);">Vault Knowledge</td>
+            <td style="padding:0.6rem 0.8rem;"><code>KnowledgeProvider</code></td>
+            <td style="padding:0.6rem 0.8rem; text-align:center; color:var(--green);">43/43</td>
+            <td style="padding:0.6rem 0.8rem;"><span class="badge badge-frozen">Frozen v1</span></td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.6rem 0.8rem; font-weight:600;">Skills</td>
+            <td style="padding:0.6rem 0.8rem; color:var(--green);">Procedural Knowledge</td>
+            <td style="padding:0.6rem 0.8rem;"><code>KnowledgeProvider</code></td>
+            <td style="padding:0.6rem 0.8rem; text-align:center; color:var(--green);">9/9</td>
+            <td style="padding:0.6rem 0.8rem;"><span class="badge badge-frozen">Frozen v1</span></td>
+          </tr>
+          <tr>
+            <td style="padding:0.6rem 0.8rem; font-weight:600;">Archive</td>
+            <td style="padding:0.6rem 0.8rem; color:var(--green);">Historical Memory</td>
+            <td style="padding:0.6rem 0.8rem;"><code>KnowledgeProvider</code></td>
+            <td style="padding:0.6rem 0.8rem; text-align:center; color:var(--green);">21/21</td>
+            <td style="padding:0.6rem 0.8rem;"><span class="badge badge-frozen">Frozen v1</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Architecture diagram -->
+  <section style="margin-top: 3rem;">
+    <h2 style="font-size:1.4rem; margin-bottom:1rem; text-align:center;">Provider Architecture</h2>
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:2rem; text-align:center; font-size:0.9rem; line-height:1.8;">
+      <div style="margin-bottom:0.5rem;">
+        <span style="color:var(--accent-memory); font-weight:700;">MemoryProvider ABC</span>
+        <span style="color:var(--text-dim);"> ── implements ──► </span>
+        <span style="color:var(--gold);">InMemory</span><span style="color:var(--text-dim);">, </span>
+        <span style="color:var(--green);">Mem0</span><span style="color:var(--text-dim);">, </span>
+        <span style="color:var(--orange);">Honcho</span>
+      </div>
+      <div style="color:var(--text-dim);">│</div>
+      <div style="color:var(--text-dim);">│  store() · query() · update() · delete() · get()</div>
+      <div style="color:var(--text-dim);">│</div>
+      <div style="margin:0.75rem 0;">
+        <span style="color:var(--accent-knowledge); font-weight:700;">KnowledgeProvider ABC</span>
+        <span style="color:var(--text-dim);"> ── implements ──► </span>
+        <span style="color:var(--text-dim);">Obsidian</span><span style="color:var(--text-dim);">, </span>
+        <span style="color:var(--text-dim);">Skills</span><span style="color:var(--text-dim);">, </span>
+        <span style="color:var(--text-dim);">Archive</span>
+      </div>
+      <div style="color:var(--text-dim);">│</div>
+      <div style="color:var(--text-dim);">│  search() · get() · list() · health() · capabilities()</div>
+      <div style="color:var(--text-dim);">│</div>
+      <div style="color:var(--text-dim); font-size:0.8rem; margin-top:0.5rem;">All providers converge in Context Builder &amp; Policy Engine</div>
+      <div style="margin-top:0.5rem;">
+        <span style="display:inline-block; background:rgba(108,140,255,0.1); border:1px solid rgba(108,140,255,0.2); border-radius:8px; padding:0.3rem 0.8rem; color:var(--accent-memory); font-size:0.82rem;">▶ POST /api/v1 — action-based routing</span>
+        <span style="display:inline-block; background:rgba(245,200,66,0.1); border:1px solid rgba(245,200,66,0.2); border-radius:8px; padding:0.3rem 0.8rem; color:var(--gold); font-size:0.82rem; margin-left:0.5rem;">★ InMemory = Gold Standard</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Memory Platform Academy · Provider Explorer · <span style="color:var(--accent-memory);">v1.0</span>
+  </footer>
+</div>
+
+<script>
+  // Filter buttons
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.dataset.filter;
+      document.querySelectorAll('.card').forEach(card => {
+        if (filter === 'all') { card.classList.remove('hidden'); return; }
+        if (filter === 'gold') {
+          card.classList.toggle('hidden', card.dataset.status !== 'gold');
+          return;
+        }
+        if (filter === 'frozen') {
+          card.classList.toggle('hidden', card.dataset.status !== 'frozen');
+          return;
+        }
+        if (filter === 'active') {
+          card.classList.toggle('hidden', card.dataset.status !== 'active');
+          return;
+        }
+        if (filter === 'memory') {
+          card.classList.toggle('hidden', card.dataset.type !== 'memory');
+          return;
+        }
+        if (filter === 'knowledge') {
+          card.classList.toggle('hidden', card.dataset.type !== 'knowledge');
+          return;
+        }
+      });
+    });
+  });
+
+  // Click to expand
+  document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => {
+      card.classList.toggle('expanded');
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Platform Academy 🧠</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-card: #1c2128;
+      --border: #30363d;
+      --blue: #58a6ff;
+      --blue-hover: #79b8ff;
+      --orange: #d29922;
+      --orange-hover: #e3b341;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --success: #3fb950;
+      --danger: #f85149;
+      --purple: #bc8cff;
+      --green: #3fb950;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    header {
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 48px 0 32px;
+      text-align: center;
+    }
+    header h1 { font-size: 2.8rem; margin-bottom: 8px; }
+    header h1 span { color: var(--blue); }
+    header h1 .accent { color: var(--orange); }
+    header p {
+      color: var(--text-secondary);
+      font-size: 1.15rem;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(88, 166, 255, 0.12);
+      color: var(--blue);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      border: 1px solid rgba(88, 166, 255, 0.25);
+    }
+    .academy-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      padding: 48px 0;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      border-color: var(--blue);
+    }
+    .card .icon {
+      font-size: 2.2rem;
+      margin-bottom: 14px;
+      display: block;
+    }
+    .card h3 {
+      font-size: 1.15rem;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .card .card-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 10px;
+      margin-top: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .card-tag.overview { background: rgba(88,166,255,0.12); color: var(--blue); border: 1px solid rgba(88,166,255,0.2); }
+    .card-tag.wizard { background: rgba(210,153,34,0.12); color: var(--orange); border: 1px solid rgba(210,153,34,0.2); }
+    .card-tag.explore { background: rgba(188,140,255,0.12); color: var(--purple); border: 1px solid rgba(188,140,255,0.2); }
+    .card-tag.brain { background: rgba(63,185,80,0.12); color: var(--green); border: 1px solid rgba(63,185,80,0.2); }
+    .card-tag.explain { background: rgba(248,81,73,0.12); color: var(--danger); border: 1px solid rgba(248,81,73,0.2); }
+    .card-tag.univ { background: rgba(210,153,34,0.12); color: var(--orange); border: 1px solid rgba(210,153,34,0.2); }
+    .card-tag.fix { background: rgba(248,81,73,0.12); color: var(--danger); border: 1px solid rgba(248,81,73,0.2); }
+    footer {
+      text-align: center;
+      padding: 24px 0 40px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+    }
+    @media (max-width: 640px) {
+      header h1 { font-size: 2rem; }
+      .academy-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <span class="badge">🧠 Memory Platform Academy</span>
+      <h1><span>Memory</span> ≠ <span class="accent">Knowledge</span></h1>
+      <p>Master the Memory Platform — understand how AI creates, stores, retrieves, and reasons with memories to build trustworthy agents.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="academy-grid">
+      <a href="platform-overview.html" class="card">
+        <span class="icon">🏗️</span>
+        <h3>Platform Overview</h3>
+        <p>Why Memory ≠ Knowledge. The architecture behind the Memory Platform and what problems it solves.</p>
+        <span class="card-tag overview">📖 Overview</span>
+      </a>
+
+      <a href="interactive-workflow.html" class="card">
+        <span class="icon">🧭</span>
+        <h3>Interactive Workflow</h3>
+        <p>Step-by-step wizards — Add a Provider, Debug a Memory, Deploy to Production, and more.</p>
+        <span class="card-tag wizard">⚡ Wizard</span>
+      </a>
+
+      <a href="provider-explorer.html" class="card">
+        <span class="icon">🔌</span>
+        <h3>Provider Explorer</h3>
+        <p>Explore every provider: InMemory, Mem0, Honcho, Obsidian, Skills, Archive — roles, capabilities, status.</p>
+        <span class="card-tag explore">🔍 Explore</span>
+      </a>
+
+      <a href="ai-brain-viewer.html" class="card">
+        <span class="icon">🧠</span>
+        <h3>AI Brain Viewer</h3>
+        <p>"How AI thinks" — trace the journey from Question → Memory → Knowledge → Skill → Tool → Answer.</p>
+        <span class="card-tag brain">🔬 Trace</span>
+      </a>
+
+      <a href="ai-explain-mode.html" class="card">
+        <span class="icon">💡</span>
+        <h3>AI Explain Mode</h3>
+        <p>Why did the AI answer this way? See the full decision trace with memory lookups and policy decisions.</p>
+        <span class="card-tag explain">🔍 Explain</span>
+      </a>
+
+      <a href="ai-university.html" class="card">
+        <span class="icon">🎓</span>
+        <h3>AI University</h3>
+        <p>Courses organized by 13 faculties — from Memory Fundamentals to Advanced Orchestration.</p>
+        <span class="card-tag univ">📚 Courses</span>
+      </a>
+
+      <a href="troubleshooting-wizard.html" class="card">
+        <span class="icon">🔧</span>
+        <h3>Troubleshooting Wizard</h3>
+        <p>Pick a symptom, answer 5 questions, get a guided fix. From provider errors to performance issues.</p>
+        <span class="card-tag fix">🛠️ Fix</span>
+      </a>
+    </div>
+
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin-bottom: 48px;">
+      <h3 style="color: var(--blue); margin-bottom: 12px;">🚀 Quick Start</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 16px;">
+        New to the Memory Platform? Start here:
+      </p>
+      <ol style="color: var(--text-secondary); padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li><strong style="color: var(--text-primary);">1.</strong> Read the <a href="platform-overview.html" style="color: var(--blue); text-decoration: none;">Platform Overview</a> — understand the big picture</li>
+        <li><strong style="color: var(--text-primary);">2.</strong> Visit the <a href="provider-explorer.html" style="color: var(--blue); text-decoration: none;">Provider Explorer</a> — see what's available</li>
+        <li><strong style="color: var(--text-primary);">3.</strong> Run the <a href="interactive-workflow.html" style="color: var(--blue); text-decoration: none;">Interactive Workflow</a> — add your first provider</li>
+        <li><strong style="color: var(--text-primary);">4.</strong> Explore <a href="ai-brain-viewer.html" style="color: var(--blue); text-decoration: none;">AI Brain Viewer</a> — watch how memories are used</li>
+        <li><strong style="color: var(--text-primary);">5.</strong> Enroll in <a href="ai-university.html" style="color: var(--blue); text-decoration: none;">AI University</a> — go deep</li>
+      </ol>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>🧠 Memory Platform Academy · Built with ❤️ for AI Engineers</p>
+    </div>
+  </footer>
+</body>
+</html>

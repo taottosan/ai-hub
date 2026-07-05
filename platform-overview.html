@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platform Overview 🏗️ — Memory Platform Academy</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-card: #1c2128;
+      --border: #30363d; --blue: #58a6ff; --blue-hover: #79b8ff;
+      --orange: #d29922; --orange-hover: #e3b341;
+      --text-primary: #e6edf3; --text-secondary: #8b949e; --text-muted: #6e7681;
+      --success: #3fb950; --danger: #f85149; --purple: #bc8cff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary); color: var(--text-primary); line-height: 1.7;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+    /* Top nav bar */
+    .top-nav {
+      background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+    .top-nav .container { display: flex; align-items: center; gap: 16px; }
+    .top-nav a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; }
+    .top-nav a:hover { color: var(--blue); }
+    .top-nav .back-icon { font-size: 1.1rem; }
+
+    /* Hero section */
+    .hero {
+      padding: 56px 0 40px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 12px; }
+    .hero h1 span { color: var(--blue); }
+    .hero p {
+      color: var(--text-secondary); font-size: 1.1rem;
+      max-width: 680px; margin: 0 auto;
+    }
+
+    /* Content sections */
+    .section {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 36px; margin-bottom: 28px;
+    }
+    .section h2 {
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section h2 .hl-blue { color: var(--blue); }
+    .section h2 .hl-orange { color: var(--orange); }
+    .section h3 {
+      font-size: 1.1rem; color: var(--blue); margin: 20px 0 10px;
+    }
+    .section p, .section li {
+      color: var(--text-secondary); margin-bottom: 12px;
+    }
+    .section ul { padding-left: 20px; }
+    .section strong { color: var(--text-primary); }
+
+    /* Info boxes */
+    .info-box {
+      background: rgba(88,166,255,0.08);
+      border: 1px solid rgba(88,166,255,0.2);
+      border-radius: 8px; padding: 20px; margin: 20px 0;
+    }
+    .info-box.warn {
+      background: rgba(210,153,34,0.08);
+      border-color: rgba(210,153,34,0.2);
+    }
+    .info-box h4 { color: var(--blue); margin-bottom: 8px; font-size: 0.95rem; }
+    .info-box.warn h4 { color: var(--orange); }
+
+    /* Comparison table */
+    .compare-table {
+      width: 100%; border-collapse: collapse; margin: 20px 0;
+    }
+    .compare-table th {
+      background: var(--bg-secondary); color: var(--text-primary);
+      padding: 12px 16px; text-align: left; border: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .compare-table td {
+      padding: 12px 16px; border: 1px solid var(--border);
+      color: var(--text-secondary); font-size: 0.9rem;
+    }
+    .compare-table tr:hover td { background: rgba(88,166,255,0.04); }
+
+    /* Mermaid */
+    .mermaid-wrapper {
+      background: #0d1117; border-radius: 10px;
+      padding: 24px; margin: 20px 0; overflow-x: auto;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .principle-card {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 8px; padding: 20px; margin: 16px 0;
+    }
+    .principle-card h4 { color: var(--orange); margin-bottom: 8px; }
+
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--blue); text-decoration: none; font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+    .back-link:hover { color: var(--blue-hover); }
+
+    footer {
+      text-align: center; padding: 32px 0 48px;
+      color: var(--text-muted); font-size: 0.85rem;
+      border-top: 1px solid var(--border); margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="container">
+      <a href="index.html"><span class="back-icon">🏠</span> Academy Home</a>
+      <span style="color: var(--text-muted);">·</span>
+      <span style="color: var(--text-secondary); font-size: 0.9rem;">🏗️ Platform Overview</span>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <h1>🏗️ <span>Platform</span> Overview</h1>
+      <p>Why <strong style="color: var(--blue);">Memory</strong> <span style="color: var(--orange);font-size:1.3rem;">≠</span> <strong style="color: var(--orange);">Knowledge</strong> — the architecture, philosophy, and problems the Memory Platform solves.</p>
+    </div>
+
+    <!-- SECTION 1: Why Memory ≠ Knowledge -->
+    <div class="section">
+      <h2>🤔 Why <span class="hl-blue">Memory</span> ≠ <span class="hl-orange">Knowledge</span></h2>
+
+      <p>This is the <strong>core insight</strong> of the Memory Platform. Most systems treat memory and knowledge as the same thing — they're not.</p>
+
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th style="width:20%;">Dimension</th>
+            <th style="width:40%;">🧠 Memory</th>
+            <th style="width:40%;">📚 Knowledge</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>What it is</strong></td>
+            <td>Personal, episodic — what <em>this</em> agent experienced</td>
+            <td>Universal, semantic — facts about the world</td>
+          </tr>
+          <tr>
+            <td><strong>Source</strong></td>
+            <td>Conversations, actions, decisions, user feedback</td>
+            <td>Documentation, code, APIs, training data</td>
+          </tr>
+          <tr>
+            <td><strong>Scope</strong></td>
+            <td>Per-user, per-session, per-agent</td>
+            <td>Shared across all agents and users</td>
+          </tr>
+          <tr>
+            <td><strong>Volatility</strong></td>
+            <td>🟡 Medium — relevance decays, needs consolidation</td>
+            <td>🟢 Low — stable, versioned, curated</td>
+          </tr>
+          <tr>
+            <td><strong>Query pattern</strong></td>
+            <td>Similarity search + recency + importance</td>
+            <td>Keyword / semantic search on curated corpus</td>
+          </tr>
+          <tr>
+            <td><strong>Example</strong></td>
+            <td>"Last week the user asked for dark mode"</td>
+            <td>"The API accepts a `theme` parameter"</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="info-box warn">
+        <h4>⚠️ The Common Mistake</h4>
+        <p>Storing ephemeral conversation memories in the same vector store as curated documentation leads to <strong>context pollution</strong> — the agent retrieves outdated personal preferences when it needs factual knowledge, or misses personal context because it's buried in generic docs. The Memory Platform separates these concerns explicitly.</p>
+      </div>
+    </div>
+
+    <!-- SECTION 2: Architecture -->
+    <div class="section">
+      <h2>🏛️ <span class="hl-blue">Architecture</span></h2>
+
+      <p>The Memory Platform routes every request through a pipeline: <strong>Receive → Classify → Retrieve → Build Context → Respond → Store</strong>.</p>
+
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+graph TD
+    subgraph Input["📥 Input Layer"]
+        A["User Message"] --> B["Action Router<br/><span style='font-size:0.85rem'>POST /api/v1</span>"]
+    end
+
+    subgraph Memory["🧠 Memory Layer"]
+        C["Memory Store<br/><span style='font-size:0.85rem'>InMemory · Mem0 · Honcho · Obsidian</span>"]
+        D["Knowledge Store<br/><span style='font-size:0.85rem'>Skills · Archive · Documentation</span>"]
+        E["Policy Engine<br/><span style='font-size:0.85rem'>Importance ≥ threshold?</span>"]
+    end
+
+    subgraph Reasoning["⚙️ Reasoning Layer"]
+        F["Context Builder<br/><span style='font-size:0.85rem'>Merge + Rank by Score</span>"]
+        G["AI Brain<br/><span style='font-size:0.85rem'>Memory→Knowledge→Skill→Tool→Answer</span>"]
+    end
+
+    subgraph Output["📤 Output Layer"]
+        H["Response"]
+        I["Explainability Trace<br/><span style='font-size:0.85rem'>trace_id + decision log</span>"]
+    end
+
+    B --> C
+    B --> D
+    C --> E
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+    G --> I
+    H -.-> C
+</pre>
+      </div>
+
+      <h3>🔁 How the Pipeline Works</h3>
+      <ol style="color: var(--text-secondary); padding-left: 20px;">
+        <li style="margin-bottom: 10px;"><strong style="color: var(--text-primary);">Action Router</strong> — receives the request and routes it to the correct handler (<code style="color: var(--orange);">memory.store</code>, <code style="color: var(--orange);">context.build</code>, etc.)</li>
+        <li style="margin-bottom: 10px;"><strong style="color: var(--text-primary);">Memory Store</strong> — personal, episodic memories from previous interactions</li>
+        <li style="margin-bottom: 10px;"><strong style="color: var(--text-primary);">Knowledge Store</strong> — curated facts, docs, skills, and archival knowledge</li>
+        <li style="margin-bottom: 10px;"><strong style="color: var(--text-primary);">Policy Engine</strong> — filters low-confidence memories <em>before</em> storage (importance ≥ threshold)</li>
+        <li style="margin-bottom: 10px;"><strong style="color: var(--text-primary);">Context Builder</strong> — merges results from all providers, ranked by relevance score</li>
+        <li style="margin-bottom: 10px;"><strong style="color: var(--text-primary);">AI Brain</strong> — consumes the enriched context to produce the final answer</li>
+        <li style="margin-bottom: 10px;"><strong style="color: var(--text-primary);">Explainability Trace</strong> — every decision is logged with a <code style="color: var(--orange);">trace_id</code></li>
+      </ol>
+    </div>
+
+    <!-- SECTION 3: Problems it solves -->
+    <div class="section">
+      <h2>🎯 <span class="hl-orange">Problems</span> It Solves</h2>
+
+      <div class="principle-card">
+        <h4>🧩 Problem 1: Context Pollution</h4>
+        <p>When all data is stored together, personal memories drown out factual knowledge and vice versa. The Memory Platform's <strong>two-tier architecture</strong> (Memory vs Knowledge) keeps them cleanly separated until the Context Builder intelligently merges them.</p>
+      </div>
+
+      <div class="principle-card">
+        <h4>📉 Problem 2: Relevance Decay</h4>
+        <p>Old memories shouldn't have the same weight as new ones. The platform uses <strong>recency scoring × importance thresholds</strong> to ensure yesterday's unimportant chat doesn't override today's critical context.</p>
+      </div>
+
+      <div class="principle-card">
+        <h4>🔌 Problem 3: Provider Lock-In</h4>
+        <p>Switching from InMemory to Mem0 to Honcho shouldn't require rewriting your application. The <strong>Provider ABC contract</strong> (MemoryProvider, KnowledgeProvider) means any provider plugs in with zero application changes.</p>
+      </div>
+
+      <div class="principle-card">
+        <h4>🔍 Problem 4: Opaque Decisions</h4>
+        <p>Why did the agent answer that way? Every response includes an <strong>explainability trace</strong> with <code style="color: var(--orange);">trace_id</code> showing exactly which memories and knowledge were used, which policy rules fired, and what was filtered out.</p>
+      </div>
+
+      <div class="principle-card">
+        <h4>✅ Problem 5: No Quality Gate</h4>
+        <p>Without a policy engine, low-confidence or irrelevant memories get stored and later retrieved — polluting future answers. The <strong>Policy Engine</strong> evaluates importance BEFORE storage, discarding memories below threshold.</p>
+      </div>
+
+      <div class="info-box">
+        <h4>📐 Design Principle</h4>
+        <p><strong>Never optimize before correctness.</strong> The Golden Dataset (200 test cases) is the final judge — any change that causes a &gt;5% regression in benchmark scores is automatically rejected.</p>
+      </div>
+    </div>
+
+    <!-- SECTION 4: Provider Landscape -->
+    <div class="section">
+      <h2>🗺️ <span class="hl-blue">Provider</span> Landscape</h2>
+
+      <div class="mermaid-wrapper">
+        <pre class="mermaid">
+graph LR
+    subgraph Memory["🧠 Memory Providers"]
+        IM["InMemory<br/><span style='font-size:0.85rem'>✅ Gold Standard</span>"]
+        M0["Mem0<br/><span style='font-size:0.85rem'>🔄 Integration</span>"]
+        HC["Honcho<br/><span style='font-size:0.85rem'>🔄 Integration</span>"]
+    end
+
+    subgraph Knowledge["📚 Knowledge Providers"]
+        OBS["Obsidian<br/><span style='font-size:0.85rem'>📝 Notes & Wiki</span>"]
+        SK["Skills<br/><span style='font-size:0.85rem'>⚡ Procedural</span>"]
+        ARC["Archive<br/><span style='font-size:0.85rem'>🗂️ Historical</span>"]
+    end
+
+    IM --> PB["Policy Engine"]
+    M0 --> PB
+    HC --> PB
+    OBS --> CB["Context Builder"]
+    SK --> CB
+    ARC --> CB
+    PB --> CB
+    CB --> ANS["✨ Answer"]
+</pre>
+      </div>
+      <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">Explore each provider in the <a href="provider-explorer.html" style="color: var(--blue);">Provider Explorer →</a></p>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>🧠 Memory Platform Academy · <a href="index.html" style="color: var(--text-muted);">Back to Home</a></p>
+    </div>
+  </footer>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: '#58a6ff',
+        primaryTextColor: '#e6edf3',
+        primaryBorderColor: '#58a6ff',
+        lineColor: '#58a6ff',
+        secondaryColor: '#d29922',
+        tertiaryColor: '#1c2128',
+        fontSize: '14px'
+      },
+      flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+    });
+  </script>
+</body>
+</html>

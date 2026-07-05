@@ -1,0 +1,24 @@
+# Cloudflare Pages deployment config
+# Used by @cloudflare/next-on-pages for static export
+
+name = "memory-platform-academy"
+compatibility_date = "2026-07-04"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+# Build command and environment
+[build]
+command = "npm run sync-content && npm run build-search-index && npx @cloudflare/next-on-pages"
+
+[build.env]
+NODE_VERSION = "22"
+
+# Route all unmatched URLs to the static export
+[[rules]]
+glob = "**/*"
+action = { type = "rewrite", to = "/index.html" }
+
+# Prevent search-index.json from being cached too aggressively
+[[rules]]
+glob = "**/search-index.json"
+action = { type = "setHeaders", set = { "Cache-Control" = "no-cache, max-age=0" } }

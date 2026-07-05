@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Workflow 🧭 — Memory Platform Academy</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-card: #1c2128;
+      --border: #30363d; --blue: #58a6ff; --blue-hover: #79b8ff;
+      --orange: #d29922; --text-primary: #e6edf3; --text-secondary: #8b949e; --text-muted: #6e7681;
+      --success: #3fb950; --danger: #f85149; --purple: #bc8cff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary); color: var(--text-primary); line-height: 1.6;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+    .top-nav {
+      background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+    .top-nav .container { display: flex; align-items: center; gap: 16px; }
+    .top-nav a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; }
+    .top-nav a:hover { color: var(--blue); }
+
+    .hero {
+      padding: 56px 0 40px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 12px; }
+    .hero h1 span { color: var(--blue); }
+    .hero p { color: var(--text-secondary); font-size: 1.1rem; max-width: 640px; margin: 0 auto; }
+
+    /* Action picker */
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+    .action-btn {
+      background: var(--bg-card); border: 2px solid var(--border);
+      border-radius: 10px; padding: 20px 16px;
+      text-align: center; cursor: pointer;
+      transition: all 0.2s; color: var(--text-primary); font-size: 1rem;
+    }
+    .action-btn:hover { border-color: var(--blue); background: rgba(88,166,255,0.08); }
+    .action-btn.active { border-color: var(--blue); background: rgba(88,166,255,0.12); }
+    .action-btn .action-icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .action-btn .action-label { font-weight: 600; font-size: 0.9rem; }
+    .action-btn .action-sub { color: var(--text-muted); font-size: 0.8rem; margin-top: 4px; }
+
+    /* Step display */
+    .step-panel {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 32px; margin-bottom: 28px;
+      min-height: 300px;
+    }
+    .step-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .step-number {
+      background: var(--blue); color: #0d1117; font-weight: 700;
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+    }
+    .step-title { font-size: 1.2rem; font-weight: 600; }
+    .step-content { color: var(--text-secondary); line-height: 1.7; }
+    .step-content h4 { color: var(--blue); margin: 16px 0 8px; font-size: 1rem; }
+    .step-content code {
+      background: rgba(88,166,255,0.1); color: var(--orange);
+      padding: 2px 6px; border-radius: 4px; font-size: 0.9rem;
+    }
+    .step-content .highlight-box {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; margin: 12px 0;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.85rem; color: var(--text-secondary);
+    }
+
+    .nav-buttons {
+      display: flex; justify-content: space-between; margin-top: 24px;
+    }
+    .nav-btn {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      color: var(--text-primary); padding: 10px 24px;
+      border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .nav-btn.primary {
+      background: var(--blue); color: #0d1117; font-weight: 600;
+      border-color: var(--blue);
+    }
+    .nav-btn.primary:hover { background: var(--blue-hover); }
+    .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .reset-btn {
+      display: block; margin: 20px auto 0;
+      background: transparent; border: 1px solid var(--danger);
+      color: var(--danger); padding: 8px 20px; border-radius: 8px;
+      cursor: pointer; font-size: 0.85rem;
+    }
+    .reset-btn:hover { background: rgba(248,81,73,0.1); }
+
+    .mermaid-mini {
+      background: #0d1117; border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; margin: 16px 0;
+      text-align: center; overflow-x: auto;
+    }
+
+    .step-completed {
+      color: var(--success); font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    .copy-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-secondary); padding: 4px 12px;
+      border-radius: 4px; cursor: pointer; font-size: 0.8rem; float: right;
+    }
+    .copy-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+    footer {
+      text-align: center; padding: 32px 0 48px;
+      color: var(--text-muted); font-size: 0.85rem;
+      border-top: 1px solid var(--border); margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="container">
+      <a href="index.html">🏠 Academy Home</a>
+      <span style="color: var(--text-muted);">·</span>
+      <span style="color: var(--text-secondary); font-size: 0.9rem;">🧭 Interactive Workflow</span>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <h1>🧭 <span>Interactive</span> Workflow</h1>
+      <p>Pick an action, and we'll guide you step-by-step through the process.</p>
+    </div>
+
+    <!-- Action Picker -->
+    <h3 style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em;">🎯 Choose Your Action</h3>
+    <div class="action-grid" id="actionGrid">
+      <div class="action-btn active" data-action="add-provider">
+        <span class="action-icon">🔌</span>
+        <span class="action-label">Add a Provider</span>
+        <span class="action-sub">Integrate InMemory, Mem0, Honcho, Obsidian, Skills, or Archive</span>
+      </div>
+      <div class="action-btn" data-action="debug-memory">
+        <span class="action-icon">🔍</span>
+        <span class="action-label">Debug a Memory</span>
+        <span class="action-sub">Trace why a memory was stored, filtered, or retrieved</span>
+      </div>
+      <div class="action-btn" data-action="deploy">
+        <span class="action-icon">🚀</span>
+        <span class="action-label">Deploy to Production</span>
+        <span class="action-sub">Go from local testing to production deployment</span>
+      </div>
+      <div class="action-btn" data-action="run-tests">
+        <span class="action-icon">🧪</span>
+        <span class="action-label">Run Conformance Tests</span>
+        <span class="action-sub">Validate a provider against the Gold Standard</span>
+      </div>
+    </div>
+
+    <!-- Step Panel -->
+    <div class="step-panel" id="stepPanel">
+      <div class="step-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span class="step-number" id="stepNumber">1</span>
+          <span class="step-title" id="stepTitle">Select Provider Type</span>
+        </div>
+        <span id="stepStatus" style="font-size:0.85rem; color: var(--text-muted);">Step 1 of 5</span>
+      </div>
+      <div class="step-content" id="stepContent">
+        <p>Choose what kind of provider you want to add:</p>
+        <ul>
+          <li><strong>🧠 Memory Provider</strong> — stores and retrieves personal, episodic memories (InMemory, Mem0, Honcho)</li>
+          <li><strong>📚 Knowledge Provider</strong> — stores and retrieves curated facts and procedures (Obsidian, Skills, Archive)</li>
+        </ul>
+        <p style="margin-top: 12px;">Would you like to continue with a <strong>Memory Provider</strong> or <strong>Knowledge Provider</strong>?</p>
+        <div style="display: flex; gap: 12px; margin-top: 16px;">
+          <button class="nav-btn primary" onclick="navigateStep(1, 'memory')">🧠 Memory Provider</button>
+          <button class="nav-btn" onclick="navigateStep(1, 'knowledge')">📚 Knowledge Provider</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="nav-btn" id="prevBtn" onclick="prevStep()">← Previous</button>
+      <button class="nav-btn primary" id="nextBtn" onclick="nextStep()">Next →</button>
+    </div>
+
+    <button class="reset-btn" onclick="resetWorkflow()">⟲ Reset Workflow</button>
+
+    <div style="margin: 40px 0;">
+      <h3 style="color: var(--blue); margin-bottom: 16px;">📊 Workflow Overview</h3>
+      <div class="mermaid-mini">
+        <pre class="mermaid">
+graph LR
+    A["🎯 Pick Action"] --> B["⚙️ Step 1"]
+    B --> C["⚙️ Step 2"]
+    C --> D["⚙️ Step 3"]
+    D --> E["⚙️ Step 4"]
+    E --> F["✅ Done!"]
+    style A fill:#58a6ff22,stroke:#58a6ff,color:#e6edf3
+    style F fill:#3fb95022,stroke:#3fb950,color:#e6edf3
+</pre>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>🧠 Memory Platform Academy · <a href="index.html" style="color: var(--text-muted);">Back to Home</a></p>
+    </div>
+  </footer>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: { primaryColor: '#58a6ff', primaryTextColor: '#e6edf3', primaryBorderColor: '#58a6ff', lineColor: '#58a6ff', secondaryColor: '#d29922', tertiaryColor: '#1c2128' }, flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+
+    // Workflow data
+    const workflows = {
+      'add-provider': {
+        title: 'Add a Provider',
+        steps: [
+          { title: 'Select Provider Type', content: `<p>Choose what kind of provider you want to add:</p><ul><li><strong>🧠 Memory Provider</strong> — stores personal, episodic memories (InMemory, Mem0, Honcho)</li><li><strong>📚 Knowledge Provider</strong> — stores curated facts (Obsidian, Skills, Archive)</li></ul><div style="display:flex;gap:12px;margin-top:16px;"><button class="nav-btn primary" onclick="navigateStep(0,'memory')">🧠 Memory Provider</button><button class="nav-btn" onclick="navigateStep(0,'knowledge')">📚 Knowledge Provider</button></div>` },
+          { title: 'Pick Specific Provider', content: `<p>Select which provider to integrate:</p><div id="providerChoices"></div>` },
+          { title: 'Configure Connection', content: `<p>Set up your provider configuration. All providers implement the <code>MemoryProvider</code> or <code>KnowledgeProvider</code> ABC.</p><div class="highlight-box">from memory_platform.contracts.base import MemoryProvider<br/><br/>class MyProvider(MemoryProvider):<br/>&nbsp;&nbsp;&nbsp;&nbsp;def store(self, memory): ...<br/>&nbsp;&nbsp;&nbsp;&nbsp;def query(self, query): ...<br/>&nbsp;&nbsp;&nbsp;&nbsp;def get(self, id): ...<br/>&nbsp;&nbsp;&nbsp;&nbsp;def delete(self, id): ...</div>` },
+          { title: 'Run Conformance Tests', content: `<p>Before a provider can be used, it must pass <strong>all 15 conformance tests</strong>. Run:</p><div class="highlight-box">python -m pytest tests/test_mock_providers.py -v<br/><br/># Expected: 15 passed, 0 failed<br/># Gold Standard reference: providers/mock/memory_mock.py</div>` },
+          { title: 'Verify & Deploy', content: `<p>✅ Your provider is ready! Final checklist:</p><ul><li>✅ All 15 conformance tests pass</li><li>✅ Golden Dataset regression ≤ 5%</li><li>✅ Provider implements all ABC methods</li><li>✅ Policy Engine integration verified</li></ul><p style="margin-top:16px;">Run the benchmark to confirm:</p><div class="highlight-box">python -m benchmark.runner --dataset golden-dataset/core</div>` }
+        ]
+      },
+      'debug-memory': {
+        title: 'Debug a Memory',
+        steps: [
+          { title: 'Identify the Symptom', content: `<p>What's going wrong?</p><ul><li><strong>🧠 Missing memory</strong> — expected memory wasn't retrieved</li><li><strong>📦 Wrong context</strong> — irrelevant memories appeared in context</li><li><strong>⏱️ Stale memory</strong> — old memory was used instead of recent one</li><li><strong>🚫 Filtered out</strong> — memory was discarded by Policy Engine</li></ul>` },
+          { title: 'Check the Trace ID', content: `<p>Every response includes a <code>trace_id</code>. Use it to inspect the decision trace:</p><div class="highlight-box">trace_id: "mem_abc123"<br/><br/># Inspect with:<br/>curl -X GET http://localhost:8000/api/v1/trace/mem_abc123</div><p>Look for: which memories were retrieved, their importance scores, and what the Policy Engine decided.</p>` },
+          { title: 'Inspect Policy Decision', content: `<p>Check if the Policy Engine filtered your memory:</p><div class="highlight-box"># Run the policy simulator:<br/>python tools/policy_simulator.py --content "..." --importance critical<br/><br/># Output shows:<br/>✓ Policy: PASS (importance=9.2 ≥ threshold=5.0)<br/>✗ Policy: DISCARD (importance=2.1 &lt; threshold=5.0)</div>` },
+          { title: 'Verify Provider Storage', content: `<p>Check if the memory was actually stored:</p><div class="highlight-box"># List all memories for a user:<br/>curl -X POST http://localhost:8000/api/v1 \<br/>&nbsp;&nbsp;-H "Content-Type: application/json" \<br/>&nbsp;&nbsp;-d '{"action":"memory.query","params":{"user_id":"user_1"}}'</div>` },
+          { title: 'Resolution', content: `<p>✅ Based on your findings:</p><ul><li><strong>Filtered?</strong> — Increase importance threshold or provide more context</li><li><strong>Not stored?</strong> — Check provider connection and ABC implementation</li><li><strong>Stale?</strong> — Recency scoring may need tuning</li><li><strong>Wrong context?</strong> — Review Context Builder ranking logic</li></ul><p>For persistent issues, run the provider inspector:</p><div class="highlight-box">python tools/provider_inspector.py</div>` }
+        ]
+      },
+      'deploy': {
+        title: 'Deploy to Production',
+        steps: [
+          { title: 'Local Testing', content: `<p>Ensure everything works locally first:</p><div class="highlight-box"># Install dependencies<br/>pip install -e ".[dev]"<br/><br/># Run all tests<br/>python -m pytest tests/ -v<br/><br/># Start dev server<br/>uvicorn memory_platform.api.router:app --reload --port 8000</div>` },
+          { title: 'Run Full Benchmark', content: `<p>Run the full 200-case Golden Dataset benchmark:</p><div class="highlight-box">python -m benchmark.runner --dataset golden-dataset/full<br/><br/># PASS: score regression ≤ 5%<br/># FAIL: score regression > 5% — BLOCKS MERGE</div><p>If it fails, check <code>benchmark/runner.py</code> for detailed scoring.</p>` },
+          { title: 'Configure Production Settings', content: `<p>Swap InMemory for a production-grade provider:</p><div class="highlight-box"># config/production.yaml<br/>provider:<br/>&nbsp;&nbsp;memory: mem0<br/>&nbsp;&nbsp;knowledge: obsidian<br/>policy:<br/>&nbsp;&nbsp;importance_threshold: 5.0<br/>context:<br/>&nbsp;&nbsp;max_memories: 20<br/>&nbsp;&nbsp;recency_weight: 0.6</div>` },
+          { title: 'Deploy & Monitor', content: `<p>Deploy with your preferred method. Monitor the following:</p><ul><li>📊 <strong>Memory store latency</strong> — should be &lt;100ms p99</li><li>📊 <strong>Context build time</strong> — should be &lt;200ms</li><li>📊 <strong>Policy evaluation rate</strong> — how many memories are filtered</li><li>📊 <strong>Explainability trace coverage</strong> — every response should have a trace_id</li></ul>` },
+          { title: 'Verify Production', content: `<p>✅ Production deployment complete! Verify with:</p><div class="highlight-box"># Smoke test<br/>curl -X POST https://your-domain.com/api/v1 \<br/>&nbsp;&nbsp;-H "Content-Type: application/json" \<br/>&nbsp;&nbsp;-d '{"action":"context.build","params":{"user_id":"test","query":"hello"}}'<br/><br/># Check trace_id in response</div>` }
+        ]
+      },
+      'run-tests': {
+        title: 'Run Conformance Tests',
+        steps: [
+          { title: 'Prepare Test Environment', content: `<p>Ensure you have the dev dependencies:</p><div class="highlight-box">pip install -e ".[dev]"<br/><br/># Verify test discovery:<br/>python -m pytest tests/ --collect-only | grep TestCase</div><p>Expected: 46 tests across the suite.</p>` },
+          { title: 'Run Mock Provider Tests', content: `<p>First, validate the mock (Gold Standard) provider:</p><div class="highlight-box">python -m pytest tests/test_mock_providers.py -v --tb=short<br/><br/># Expected output:<br/>✓ test_mock_store ... PASSED<br/>✓ test_mock_query ... PASSED<br/>✓ test_mock_get ... PASSED<br/>✓ test_mock_delete ... PASSED<br/># ... 15 total</div>` },
+          { title: 'Run Provider Conformance', content: `<p>Test that your provider matches the Gold Standard:</p><div class="highlight-box">python -m pytest tests/test_provider_conformance.py -v --provider my_provider<br/><br/># Every test mirrors the mock test exactly.<br/># If a test fails, your provider deviates from the contract.</div>` },
+          { title: 'Check Golden Dataset Score', content: `<p>Run the core benchmark to check for regression:</p><div class="highlight-box">python -m benchmark.runner --dataset golden-dataset/core<br/><br/># Score range: 0.0 - 1.0<br/># Reference score: ~0.92 (Gold Standard)<br/># ⚠️ Regression > 5% blocks merge</div>` },
+          { title: 'Review Results', content: `<p>✅ All checks complete. Summary:</p><ul><li>Mock provider: <span style="color:var(--success)">✅ 15/15 passed</span></li><li>Your provider: <span style="color:var(--success)">✅ 15/15 passed</span></li><li>Benchmark score: <span style="color:var(--success)">✅ within 5% of reference</span></li></ul><p style="margin-top:12px;">Your provider is conformant! 🎉</p>` }
+        ]
+      }
+    };
+
+    let currentAction = 'add-provider';
+    let currentStep = 0;
+    let subChoice = null;
+
+    function render() {
+      const wf = workflows[currentAction];
+      if (!wf) return;
+
+      // Update header
+      document.getElementById('stepNumber').textContent = currentStep + 1;
+      document.getElementById('stepTitle').textContent = wf.steps[currentStep].title;
+      document.getElementById('stepStatus').textContent = `Step ${currentStep + 1} of ${wf.steps.length}`;
+
+      // Render content
+      let content = wf.steps[currentStep].content;
+      if (currentStep === 1 && currentAction === 'add-provider') {
+        content = renderProviderChoices(content);
+      }
+      document.getElementById('stepContent').innerHTML = content;
+
+      // Buttons
+      document.getElementById('prevBtn').disabled = currentStep === 0;
+      document.getElementById('nextBtn').style.display = currentStep === wf.steps.length - 1 ? 'none' : 'inline-block';
+      // Show "Finish" if last step
+      if (currentStep === wf.steps.length - 1) {
+        const nextBtn = document.getElementById('nextBtn');
+        nextBtn.style.display = 'inline-block';
+        nextBtn.textContent = '✅ Complete!';
+        nextBtn.disabled = true;
+      } else {
+        document.getElementById('nextBtn').textContent = 'Next →';
+        document.getElementById('nextBtn').disabled = false;
+      }
+
+      // Highlight active action
+      document.querySelectorAll('.action-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.action === currentAction);
+      });
+    }
+
+    function renderProviderChoices(baseContent) {
+      const memoryProviders = ['InMemory', 'Mem0', 'Honcho'];
+      const knowledgeProviders = ['Obsidian', 'Skills', 'Archive'];
+      const providers = subChoice === 'memory' ? memoryProviders : knowledgeProviders;
+      const icon = subChoice === 'memory' ? '🧠' : '📚';
+      const type = subChoice === 'memory' ? 'Memory' : 'Knowledge';
+
+      let html = `<p>You selected: <strong>${icon} ${type} Provider</strong></p><p>Choose which ${type.toLowerCase()} provider to integrate:</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">`;
+      providers.forEach(p => {
+        html += `<button class="nav-btn" onclick="selectProvider('${p}')" style="flex:1;min-width:120px;">${p}</button>`;
+      });
+      html += `</div>`;
+      return html;
+    }
+
+    function navigateStep(stepIdx, choice) {
+      if (currentAction === 'add-provider' && currentStep === 0) {
+        subChoice = choice;
+      }
+      currentStep = stepIdx;
+      render();
+    }
+
+    function selectProvider(name) {
+      const content = document.getElementById('stepContent');
+      content.innerHTML = `<div class="step-completed">✅ Selected: <strong>${name}</strong></div>
+        <p style="margin-top:12px;">Great choice! In the next step, you'll configure the connection details for <strong>${name}</strong>.</p>
+        <div class="mermaid-mini">
+          <pre class="mermaid">
+graph LR
+    A["${name}"] --> B["⚙️ Configure"]
+    B --> C["🧪 Test"]
+    C --> D["✅ Deploy"]
+</pre>
+        </div>
+        <button class="nav-btn primary" onclick="currentStep=2;render();" style="margin-top:16px;">Next: Configure →</button>`;
+      mermaid.run();
+    }
+
+    function nextStep() {
+      const wf = workflows[currentAction];
+      if (currentStep < wf.steps.length - 1) {
+        currentStep++;
+        render();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        render();
+      }
+    }
+
+    function resetWorkflow() {
+      currentStep = 0;
+      subChoice = null;
+      render();
+    }
+
+    // Action buttons
+    document.querySelectorAll('.action-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        currentAction = this.dataset.action;
+        currentStep = 0;
+        subChoice = null;
+        render();
+        // Re-render mermaid
+        setTimeout(() => { try { mermaid.run(); } catch(e) {} }, 100);
+      });
+    });
+
+    render();
+    setTimeout(() => { try { mermaid.run(); } catch(e) {} }, 200);
+  </script>
+</body>
+</html>

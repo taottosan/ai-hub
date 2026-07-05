@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provider Explorer 🔌 — Memory Platform Academy</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-card: #1c2128;
+      --border: #30363d; --blue: #58a6ff; --blue-hover: #79b8ff;
+      --orange: #d29922; --text-primary: #e6edf3; --text-secondary: #8b949e; --text-muted: #6e7681;
+      --success: #3fb950; --danger: #f85149; --purple: #bc8cff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary); color: var(--text-primary); line-height: 1.6;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+    .top-nav {
+      background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+    .top-nav .container { display: flex; align-items: center; gap: 16px; }
+    .top-nav a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; }
+    .top-nav a:hover { color: var(--blue); }
+
+    .hero {
+      padding: 56px 0 40px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 12px; }
+    .hero h1 span { color: var(--blue); }
+    .hero p { color: var(--text-secondary); font-size: 1.1rem; max-width: 640px; margin: 0 auto; }
+
+    /* Provider Tabs */
+    .provider-tabs {
+      display: flex; gap: 0; margin-bottom: 0;
+      border-bottom: 2px solid var(--border);
+      overflow-x: auto;
+    }
+    .provider-tab {
+      padding: 14px 22px;
+      cursor: pointer; border: none; background: transparent;
+      color: var(--text-muted); font-size: 0.9rem; font-weight: 600;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .provider-tab:hover { color: var(--text-secondary); }
+    .provider-tab.active {
+      color: var(--blue); border-bottom-color: var(--blue);
+    }
+
+    /* Provider Detail Panel */
+    .provider-panel {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-top: none; border-radius: 0 0 12px 12px;
+      padding: 36px; margin-bottom: 28px;
+    }
+    .provider-header {
+      display: flex; align-items: flex-start; gap: 20px;
+      margin-bottom: 24px;
+    }
+    .provider-icon {
+      font-size: 3rem; width: 72px; height: 72px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-secondary); border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    .provider-meta h2 { font-size: 1.5rem; margin-bottom: 4px; }
+    .provider-meta .tagline { color: var(--text-secondary); font-size: 1rem; }
+    .provider-meta .status {
+      display: inline-block; margin-top: 8px;
+      padding: 3px 12px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;
+    }
+    .status-active { background: rgba(63,185,80,0.12); color: var(--success); border: 1px solid rgba(63,185,80,0.25); }
+    .status-beta { background: rgba(210,153,34,0.12); color: var(--orange); border: 1px solid rgba(210,153,34,0.25); }
+    .status-dev { background: rgba(248,81,73,0.12); color: var(--danger); border: 1px solid rgba(248,81,73,0.25); }
+    .status-archived { background: rgba(110,118,129,0.12); color: var(--text-muted); border: 1px solid rgba(110,118,129,0.25); }
+
+    .provider-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 20px; margin: 20px 0;
+    }
+    .info-card {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px;
+    }
+    .info-card h4 { color: var(--blue); margin-bottom: 10px; font-size: 0.95rem; }
+    .info-card h4 .emoji { margin-right: 6px; }
+    .info-card ul { padding-left: 16px; }
+    .info-card li { color: var(--text-secondary); margin-bottom: 6px; font-size: 0.9rem; }
+    .info-card li strong { color: var(--text-primary); }
+    .info-card .pct { color: var(--blue); font-weight: 600; }
+    .info-card .score { color: var(--orange); font-weight: 600; }
+
+    .spec-box {
+      background: #0d1117; border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; margin: 16px 0;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.85rem; color: var(--text-secondary);
+      overflow-x: auto;
+    }
+    .spec-box .key { color: var(--blue); }
+    .spec-box .val { color: var(--orange); }
+
+    .mermaid-provider {
+      background: #0d1117; border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; margin: 0 0 16px;
+      text-align: center; overflow-x: auto;
+    }
+
+    /* Comparison section */
+    .provider-table {
+      width: 100%; border-collapse: collapse; margin: 24px 0;
+    }
+    .provider-table th {
+      background: var(--bg-secondary); color: var(--text-primary);
+      padding: 12px 14px; text-align: left; border: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .provider-table td {
+      padding: 12px 14px; border: 1px solid var(--border);
+      color: var(--text-secondary); font-size: 0.85rem;
+    }
+    .provider-table tr:hover td { background: rgba(88,166,255,0.04); }
+
+    .badge-check { color: var(--success); }
+    .badge-cross { color: var(--danger); }
+    .badge-warn { color: var(--orange); }
+
+    footer {
+      text-align: center; padding: 32px 0 48px;
+      color: var(--text-muted); font-size: 0.85rem;
+      border-top: 1px solid var(--border); margin-top: 40px;
+    }
+
+    @media (max-width: 640px) {
+      .provider-grid { grid-template-columns: 1fr; }
+      .provider-header { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="container">
+      <a href="index.html">🏠 Academy Home</a>
+      <span style="color: var(--text-muted);">·</span>
+      <span style="color: var(--text-secondary); font-size: 0.9rem;">🔌 Provider Explorer</span>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <h1>🔌 <span>Provider</span> Explorer</h1>
+      <p>Click each provider to see its role, capabilities, and current status in the Memory Platform.</p>
+    </div>
+
+    <!-- Provider Tabs -->
+    <div class="provider-tabs" id="providerTabs">
+      <button class="provider-tab active" data-provider="inmemory">🧠 InMemory</button>
+      <button class="provider-tab" data-provider="mem0">🧠 Mem0</button>
+      <button class="provider-tab" data-provider="honcho">🧠 Honcho</button>
+      <button class="provider-tab" data-provider="obsidian">📝 Obsidian</button>
+      <button class="provider-tab" data-provider="skills">⚡ Skills</button>
+      <button class="provider-tab" data-provider="archive">🗂️ Archive</button>
+    </div>
+
+    <div class="provider-panel" id="providerPanel">
+      <!-- Dynamically loaded -->
+    </div>
+
+    <!-- Provider Comparison Table -->
+    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin-bottom: 32px;">
+      <h3 style="color: var(--blue); margin-bottom: 16px;">📊 Provider Comparison</h3>
+      <div style="overflow-x: auto;">
+        <table class="provider-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>🧠 InMemory</th>
+              <th>🧠 Mem0</th>
+              <th>🧠 Honcho</th>
+              <th>📝 Obsidian</th>
+              <th>⚡ Skills</th>
+              <th>🗂️ Archive</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Type</strong></td>
+              <td>Memory</td>
+              <td>Memory</td>
+              <td>Memory</td>
+              <td>Knowledge</td>
+              <td>Knowledge</td>
+              <td>Knowledge</td>
+            </tr>
+            <tr>
+              <td><strong>Status</strong></td>
+              <td><span class="status-active">✅ Active</span></td>
+              <td><span class="status-beta">🔄 Integration</span></td>
+              <td><span class="status-beta">🔄 Integration</span></td>
+              <td><span class="status-beta">🔄 Integration</span></td>
+              <td><span class="status-beta">🔄 Integration</span></td>
+              <td><span class="status-dev">🚧 Planned</span></td>
+            </tr>
+            <tr>
+              <td><strong>Gold Standard</strong></td>
+              <td><span class="badge-check">✅ Yes</span></td>
+              <td><span class="badge-cross">❌ No</span></td>
+              <td><span class="badge-cross">❌ No</span></td>
+              <td><span class="badge-cross">❌ No</span></td>
+              <td><span class="badge-cross">❌ No</span></td>
+              <td><span class="badge-cross">❌ No</span></td>
+            </tr>
+            <tr>
+              <td><strong>Persistence</strong></td>
+              <td><span class="badge-cross">❌ None</span></td>
+              <td><span class="badge-check">✅ Persistent</span></td>
+              <td><span class="badge-check">✅ Persistent</span></td>
+              <td><span class="badge-check">✅ Persistent</span></td>
+              <td><span class="badge-check">✅ Persistent</span></td>
+              <td><span class="badge-check">✅ Persistent</span></td>
+            </tr>
+            <tr>
+              <td><strong>Conformance</strong></td>
+              <td><span class="badge-check">✅ 15/15</span></td>
+              <td><span class="badge-warn">🔄 Pending</span></td>
+              <td><span class="badge-warn">🔄 Pending</span></td>
+              <td><span class="badge-warn">🔄 Pending</span></td>
+              <td><span class="badge-warn">🔄 Pending</span></td>
+              <td><span class="badge-cross">❌ N/A</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>🧠 Memory Platform Academy · <a href="index.html" style="color: var(--text-muted);">Back to Home</a></p>
+    </div>
+  </footer>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: { primaryColor: '#58a6ff', primaryTextColor: '#e6edf3', primaryBorderColor: '#58a6ff', lineColor: '#58a6ff', secondaryColor: '#d29922', tertiaryColor: '#1c2128' }, flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+
+    const providers = {
+      inmemory: {
+        name: 'InMemory',
+        icon: '🧠',
+        tagline: 'Gold Standard — Reference Implementation',
+        status: 'active',
+        statusLabel: '✅ Active',
+        type: 'Memory Provider',
+        description: 'The InMemory provider is the <strong>Gold Standard</strong> against which all other providers are measured. It stores everything in memory (no persistence) but implements the full MemoryProvider ABC with 100% conformance.',
+        capabilities: [
+          '✅ Full MemoryProvider ABC (store, query, get, delete)',
+          '✅ 15/15 conformance tests passing',
+          '✅ Reference score for Golden Dataset benchmark',
+          '✅ Policy Engine integration',
+          '✅ Explainability trace support',
+          '❌ No disk persistence — data lost on restart'
+        ],
+        config: `# InMemory config (minimal — no external deps)\nprovider:\n  name: inmemory\n  type: memory\n  # No connection string needed\n  # All data lives in process memory`,
+        usage: `# InMemory is the default — no setup needed\nfrom memory_platform.providers.mock.memory_mock import MockMemoryProvider\n\nprovider = MockMemoryProvider()\nprovider.store(memory_object)\nresults = provider.query("search terms")`,
+        limits: { recall: '~95%', latency: '<1ms', maxMemories: 'Unlimited (RAM)', persistence: 'None' }
+      },
+      mem0: {
+        name: 'Mem0',
+        icon: '🧠',
+        tagline: 'Production-grade persistent memory',
+        status: 'beta',
+        statusLabel: '🔄 Integration',
+        type: 'Memory Provider',
+        description: 'Mem0 provides <strong>persistent, user-scoped memory storage</strong> suitable for production deployments. Stores memories with importance scoring, recency weighting, and semantic search.',
+        capabilities: [
+          '✅ Persistent memory storage',
+          '✅ User-scoped memory isolation',
+          '✅ Semantic search with embeddings',
+          '✅ Importance & recency scoring',
+          '🔄 Conformance testing in progress',
+          '🔄 API integration via external service'
+        ],
+        config: `# Mem0 provider config\nprovider:\n  name: mem0\n  type: memory\n  connection_string: "postgresql://user:pass@host:5432/mem0"\n  embedding_model: "text-embedding-3-small"\n  similarity_threshold: 0.75`,
+        usage: `# Using Mem0 as your memory provider\nfrom memory_platform.providers.mem0 import Mem0Provider\n\nprovider = Mem0Provider(connection_string="...")\nprovider.store(memory_object, user_id="user_1")\nresults = provider.query("search terms", user_id="user_1")`,
+        limits: { recall: '~88%', latency: '10-50ms', maxMemories: '10M+', persistence: '✅ PostgreSQL' }
+      },
+      honcho: {
+        name: 'Honcho',
+        icon: '🧠',
+        tagline: 'Multi-agent memory management',
+        status: 'beta',
+        statusLabel: '🔄 Integration',
+        type: 'Memory Provider',
+        description: 'Honcho is designed for <strong>multi-agent systems</strong> where agents share and compete for memory space. Supports session-based and agent-based memory scoping.',
+        capabilities: [
+          '✅ Multi-agent memory isolation',
+          '✅ Session and agent scoping',
+          '✅ Shared memory spaces',
+          '✅ Recency and importance ranking',
+          '🔄 API integration via REST',
+          '🔄 Conformance testing in progress'
+        ],
+        config: `# Honcho provider config\nprovider:\n  name: honcho\n  type: memory\n  api_url: "http://localhost:8001"\n  api_key: "sk-..."\n  default_scope: agent`,
+        usage: `# Using Honcho for multi-agent memory\nfrom memory_platform.providers.honcho import HonchoProvider\n\nprovider = HonchoProvider(api_url="http://localhost:8001")\nprovider.store(memory_object, agent_id="agent_1", session_id="session_42")`,
+        limits: { recall: '~85%', latency: '20-80ms', maxMemories: '5M+', persistence: '✅ PostgreSQL' }
+      },
+      obsidian: {
+        name: 'Obsidian',
+        icon: '📝',
+        tagline: 'Markdown knowledge base integration',
+        status: 'beta',
+        statusLabel: '🔄 Integration',
+        type: 'Knowledge Provider',
+        description: 'The Obsidian provider connects to your <strong>Obsidian vault</strong> as a knowledge source. All your notes, wiki pages, and documentation become searchable context for the AI.',
+        capabilities: [
+          '✅ Read Obsidian vault as knowledge base',
+          '✅ Markdown parsing and indexing',
+          '✅ Wiki-link traversal',
+          '✅ Frontmatter metadata extraction',
+          '🔄 Real-time sync (via Obsidian plugin)',
+          '🔄 Conformance testing in progress'
+        ],
+        config: `# Obsidian knowledge provider\nprovider:\n  name: obsidian\n  type: knowledge\n  vault_path: "/path/to/your/vault"\n  index_extensions: [".md"]\n  follow_wiki_links: true\n  auto_sync: true`,
+        usage: `# Using Obsidian as knowledge source\nfrom memory_platform.providers.obsidian import ObsidianProvider\n\nprovider = ObsidianProvider(vault_path="/path/to/vault")\ncontext = provider.query("memory platform architecture")`,
+        limits: { recall: '~92%', latency: '50-200ms', maxMemories: 'Vault size', persistence: '✅ File system' }
+      },
+      skills: {
+        name: 'Skills',
+        icon: '⚡',
+        tagline: 'Procedural knowledge and reusable workflows',
+        status: 'beta',
+        statusLabel: '🔄 Integration',
+        type: 'Knowledge Provider',
+        description: 'The Skills provider maintains a library of <strong>reusable procedural knowledge</strong> — how-to guides, workflow templates, and skill definitions that teach the AI how to perform specific tasks.',
+        capabilities: [
+          '✅ Procedural knowledge storage',
+          '✅ Skill definition parsing (YAML frontmatter)',
+          '✅ Step-by-step workflow retrieval',
+          '✅ Versioned skill updates',
+          '🔄 Integration in progress',
+          '🔄 Skill dependency resolution'
+        ],
+        config: `# Skills knowledge provider\nprovider:\n  name: skills\n  type: knowledge\n  skills_path: "/path/to/skills"\n  auto_discover: true\n  include_templates: true`,
+        usage: `# Querying skills as context\nfrom memory_platform.providers.skills import SkillsProvider\n\nprovider = SkillsProvider(skills_path="/path/to/skills")\nskill = provider.query("how to add a new provider")`,
+        limits: { recall: '~90%', latency: '10-40ms', maxMemories: 'Skill count', persistence: '✅ File system' }
+      },
+      archive: {
+        name: 'Archive',
+        icon: '🗂️',
+        tagline: 'Historical data and long-term storage',
+        status: 'dev',
+        statusLabel: '🚧 Planned',
+        type: 'Knowledge Provider',
+        description: 'The Archive provider manages <strong>historical and long-term data</strong> — past conversations, deprecated documentation, and rarely accessed but important reference material.',
+        capabilities: [
+          '🔄 Historical data indexing',
+          '🔄 Cold storage optimization',
+          '🔄 Time-based retrieval',
+          '🔄 Compression and deduplication',
+          '🔄 Scheduled archival jobs',
+          '🔄 Planned — not yet available'
+        ],
+        config: `# Archive knowledge provider (planned)\nprovider:\n  name: archive\n  type: knowledge\n  storage_backend: s3\n  bucket: "memory-archive"\n  compression: gzip\n  retention_days: 365`,
+        usage: `# Archive provider — coming soon\nfrom memory_platform.providers.archive import ArchiveProvider\n\n# TODO: Implement ArchiveProvider ABC`,
+        limits: { recall: 'TBD', latency: '100-500ms', maxMemories: 'Unlimited', persistence: '✅ S3/Blob' }
+      }
+    };
+
+    function renderProvider(key) {
+      const p = providers[key];
+      if (!p) return;
+
+      // Update tabs
+      document.querySelectorAll('.provider-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.provider === key);
+      });
+
+      const panel = document.getElementById('providerPanel');
+      panel.innerHTML = `
+        <div class="provider-header">
+          <div class="provider-icon">${p.icon}</div>
+          <div class="provider-meta">
+            <h2>${p.icon} ${p.name}</h2>
+            <div class="tagline">${p.tagline}</div>
+            <span class="status-${p.status}">${p.statusLabel}</span>
+            <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 10px;">${p.type}</span>
+          </div>
+        </div>
+
+        <p style="color: var(--text-secondary); line-height: 1.7;">${p.description}</p>
+
+        <div class="provider-grid">
+          <div class="info-card">
+            <h4>✨ Capabilities</h4>
+            <ul>
+              ${p.capabilities.map(c => `<li>${c}</li>`).join('')}
+            </ul>
+          </div>
+          <div class="info-card">
+            <h4>📊 Performance</h4>
+            <ul>
+              <li><strong>Recall:</strong> <span class="pct">${p.limits.recall}</span></li>
+              <li><strong>Latency:</strong> <span style="color:var(--orange);font-weight:600;">${p.limits.latency}</span></li>
+              <li><strong>Max Memories:</strong> ${p.limits.maxMemories}</li>
+              <li><strong>Persistence:</strong> ${p.limits.persistence}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="info-card" style="margin-bottom: 16px;">
+          <h4>🔧 Configuration</h4>
+          <div class="spec-box">${p.config.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+        </div>
+
+        <div class="info-card">
+          <h4>💻 Usage Example</h4>
+          <div class="spec-box">${p.usage.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+        </div>
+
+        <div class="mermaid-provider">
+          <pre class="mermaid">
+graph LR
+    APP["Your App"] --> PROV["${p.name}<br/>${p.type}"]
+    PROV --> POL["Policy Engine"]
+    POL --> CTX["Context Builder"]
+    CTX --> ANS["✨ Answer"]
+    style PROV fill:#58a6ff22,stroke:#58a6ff
+</pre>
+        </div>
+      `;
+
+      setTimeout(() => { try { mermaid.run(); } catch(e) {} }, 100);
+    }
+
+    // Tab click handlers
+    document.querySelectorAll('.provider-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        renderProvider(this.dataset.provider);
+      });
+    });
+
+    // Load default
+    renderProvider('inmemory');
+  </script>
+</body>
+</html>

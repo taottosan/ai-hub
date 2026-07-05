@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js
+.next/
+out/
+
+# production build
+.vercel/
+
+# content (synced from obsidian vault)
+src/content/
+
+# search index (generated at build time)
+public/search-index.json
+
+# misc
+.DS_Store
+*.pem
+debug.log
+.env*.local
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Brain Viewer 🧠 — Memory Platform Academy</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-card: #1c2128;
+      --border: #30363d; --blue: #58a6ff; --blue-hover: #79b8ff;
+      --orange: #d29922; --text-primary: #e6edf3; --text-secondary: #8b949e; --text-muted: #6e7681;
+      --success: #3fb950; --danger: #f85149; --purple: #bc8cff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary); color: var(--text-primary); line-height: 1.6;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+    .top-nav {
+      background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+    .top-nav .container { display: flex; align-items: center; gap: 16px; }
+    .top-nav a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; }
+    .top-nav a:hover { color: var(--blue); }
+
+    .hero {
+      padding: 56px 0 40px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 12px; }
+    .hero h1 span { color: var(--blue); }
+    .hero .accent { color: var(--orange); }
+    .hero p { color: var(--text-secondary); font-size: 1.1rem; max-width: 640px; margin: 0 auto; }
+
+    /* Main trace diagram */
+    .trace-section {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 36px; margin-bottom: 28px;
+    }
+    .trace-section h2 {
+      font-size: 1.4rem; margin-bottom: 20px;
+      color: var(--blue);
+    }
+
+    .mermaid-trace {
+      background: #0d1117; border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; margin: 20px 0;
+      text-align: center; overflow-x: auto;
+    }
+
+    /* Step cards */
+    .step-flow {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      justify-content: center; margin: 24px 0;
+    }
+    .step-circle {
+      display: flex; flex-direction: column; align-items: center;
+      background: var(--bg-secondary); border: 2px solid var(--border);
+      border-radius: 14px; padding: 18px 22px; min-width: 110px;
+      transition: all 0.3s; cursor: default;
+    }
+    .step-circle:hover {
+      border-color: var(--blue); transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(88,166,255,0.15);
+    }
+    .step-circle .step-num {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      color: var(--text-muted); letter-spacing: 0.06em;
+    }
+    .step-circle .step-icon { font-size: 1.8rem; margin: 6px 0; }
+    .step-circle .step-label {
+      font-size: 0.82rem; font-weight: 600; color: var(--text-primary);
+    }
+    .step-circle .step-sub {
+      font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;
+    }
+    .step-circle.active {
+      border-color: var(--blue);
+      background: rgba(88,166,255,0.08);
+    }
+    .step-arrow {
+      display: flex; align-items: center; color: var(--text-muted);
+      font-size: 1.5rem; padding: 0 4px;
+    }
+
+    /* Detail panel */
+    .detail-panel {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 10px; padding: 24px; margin-top: 20px;
+      min-height: 160px;
+    }
+    .detail-panel h3 { color: var(--blue); margin-bottom: 12px; font-size: 1.1rem; }
+    .detail-panel h3 .icon { margin-right: 8px; }
+    .detail-panel p { color: var(--text-secondary); line-height: 1.7; }
+    .detail-panel .highlight-box {
+      background: #0d1117; border: 1px solid var(--border);
+      border-radius: 6px; padding: 14px; margin: 12px 0;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.85rem; color: var(--text-secondary);
+    }
+    .detail-panel strong { color: var(--text-primary); }
+
+    /* Example question */
+    .example-card {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; margin-bottom: 20px;
+    }
+    .example-card .question {
+      font-size: 1.1rem; font-weight: 600; color: var(--orange); margin-bottom: 8px;
+    }
+    .example-card .answer {
+      color: var(--success); font-weight: 500;
+    }
+    .example-card .sub {
+      color: var(--text-muted); font-size: 0.85rem; margin-top: 6px;
+    }
+
+    .step-selector {
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+      margin: 16px 0;
+    }
+    .step-btn {
+      padding: 8px 16px; background: var(--bg-secondary);
+      border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text-secondary); cursor: pointer; font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .step-btn:hover { border-color: var(--blue); color: var(--text-primary); }
+    .step-btn.active { border-color: var(--blue); background: rgba(88,166,255,0.1); color: var(--blue); }
+
+    footer {
+      text-align: center; padding: 32px 0 48px;
+      color: var(--text-muted); font-size: 0.85rem;
+      border-top: 1px solid var(--border); margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="container">
+      <a href="index.html">🏠 Academy Home</a>
+      <span style="color: var(--text-muted);">·</span>
+      <span style="color: var(--text-secondary); font-size: 0.9rem;">🧠 AI Brain Viewer</span>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <h1>🧠 <span>AI Brain</span> <span class="accent">Viewer</span></h1>
+      <p>"How AI thinks" — trace the journey from Question → Memory → Knowledge → Skill → Tool → Answer.</p>
+    </div>
+
+    <!-- Example question -->
+    <div class="example-card">
+      <div class="question">❓ "What's the user's preferred theme and how do I set it?"</div>
+      <div class="answer">🤖 "The user prefers dark mode. Use <code style="color:var(--orange);">api.setTheme({theme: 'dark'})</code>."</div>
+      <div class="sub">How did the AI arrive at this answer? Click each step in the brain trace below.</div>
+    </div>
+
+    <!-- Step flow -->
+    <div class="trace-section">
+      <h2>🔬 Brain Trace Journey</h2>
+
+      <div class="step-flow" id="stepFlow">
+        <div class="step-circle active" data-step="0">
+          <span class="step-num">Phase 1</span>
+          <span class="step-icon">❓</span>
+          <span class="step-label">Question</span>
+          <span class="step-sub">User Input</span>
+        </div>
+        <span class="step-arrow">→</span>
+        <div class="step-circle" data-step="1">
+          <span class="step-num">Phase 2</span>
+          <span class="step-icon">🧠</span>
+          <span class="step-label">Memory</span>
+          <span class="step-sub">Recall</span>
+        </div>
+        <span class="step-arrow">→</span>
+        <div class="step-circle" data-step="2">
+          <span class="step-num">Phase 3</span>
+          <span class="step-icon">📚</span>
+          <span class="step-label">Knowledge</span>
+          <span class="step-sub">Fetch</span>
+        </div>
+        <span class="step-arrow">→</span>
+        <div class="step-circle" data-step="3">
+          <span class="step-num">Phase 4</span>
+          <span class="step-icon">⚡</span>
+          <span class="step-label">Skill</span>
+          <span class="step-sub">Apply</span>
+        </div>
+        <span class="step-arrow">→</span>
+        <div class="step-circle" data-step="4">
+          <span class="step-num">Phase 5</span>
+          <span class="step-icon">🔧</span>
+          <span class="step-label">Tool</span>
+          <span class="step-sub">Execute</span>
+        </div>
+        <span class="step-arrow">→</span>
+        <div class="step-circle" data-step="5">
+          <span class="step-num">Phase 6</span>
+          <span class="step-icon">✨</span>
+          <span class="step-label">Answer</span>
+          <span class="step-sub">Output</span>
+        </div>
+      </div>
+
+      <!-- Step detail -->
+      <div class="detail-panel" id="detailPanel">
+        <h3><span class="icon">❓</span> Phase 1: Question</h3>
+        <p>The AI receives the user's question and begins processing. This is where the <strong>Action Router</strong> determines what kind of request this is.</p>
+        <div class="highlight-box">POST /api/v1 {"action": "context.build", "params": {"user_id": "user_1", "query": "What's the user's preferred theme and how do I set it?"}}</div>
+        <p>Key decisions at this stage:</p>
+        <ul>
+          <li>📌 Classify intent (question, command, follow-up)</li>
+          <li>📌 Extract entities (user_id, theme, preference)</li>
+          <li>📌 Route to appropriate handler (context.build)</li>
+        </ul>
+      </div>
+
+      <!-- Step selector -->
+      <div class="step-selector">
+        <button class="step-btn active" onclick="showStep(0)">1️⃣ Question</button>
+        <button class="step-btn" onclick="showStep(1)">2️⃣ Memory</button>
+        <button class="step-btn" onclick="showStep(2)">3️⃣ Knowledge</button>
+        <button class="step-btn" onclick="showStep(3)">4️⃣ Skill</button>
+        <button class="step-btn" onclick="showStep(4)">5️⃣ Tool</button>
+        <button class="step-btn" onclick="showStep(5)">6️⃣ Answer</button>
+      </div>
+    </div>
+
+    <!-- Full trace Mermaid -->
+    <div class="trace-section">
+      <h2>🧬 Complete Thought Trace</h2>
+      <div class="mermaid-trace">
+        <pre class="mermaid">
+sequenceDiagram
+    participant U as 🙋 User
+    participant R as 📡 Action Router
+    participant M as 🧠 Memory Store
+    participant K as 📚 Knowledge Store
+    participant P as ⚙️ Policy Engine
+    participant C as 🔗 Context Builder
+    participant B as 🧠 AI Brain
+    participant T as 🔧 Tools
+    participant A as 🤖 Answer
+
+    U->>R: "What's the preferred theme?"
+    R->>M: memory.query("preferred theme", user_1)
+    M-->>R: "dark mode" (score: 0.92)
+    R->>K: knowledge.query("set theme API")
+    K-->>R: "api.setTheme({theme: ...})" (score: 0.88)
+    R->>P: policy.evaluate(memories)
+    P-->>R: PASS (importance > threshold)
+    R->>C: context.build(memory + knowledge)
+    C->>B: enriched context
+    B->>T: execute(setTheme call)
+    T-->>B: result
+    B->>A: "User prefers dark mode. Use api.setTheme({theme:'dark'})"
+</pre>
+      </div>
+    </div>
+
+    <!-- Memory detail -->
+    <div class="trace-section">
+      <h2>📋 What Each Phase Contributes</h2>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <h4 style="color:var(--blue);margin-bottom:8px;">❓ Question</h4>
+          <p style="color:var(--text-secondary);font-size:0.9rem;">Parses intent, extracts entities, classifies the request type. Routes to the correct handler.</p>
+        </div>
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <h4 style="color:var(--blue);margin-bottom:8px;">🧠 Memory</h4>
+          <p style="color:var(--text-secondary);font-size:0.9rem;">Retrieves <strong>episodic memories</strong> — past conversations, user preferences, session history. Ranked by recency × importance.</p>
+        </div>
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <h4 style="color:var(--blue);margin-bottom:8px;">📚 Knowledge</h4>
+          <p style="color:var(--text-secondary);font-size:0.9rem;">Queries <strong>semantic knowledge</strong> — documentation, APIs, procedures. Retrieved from Obsidian, Skills, Archive providers.</p>
+        </div>
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <h4 style="color:var(--blue);margin-bottom:8px;">⚡ Skill</h4>
+          <p style="color:var(--text-secondary);font-size:0.9rem;">Matches the task to a <strong>reusable procedure</strong> — a step-by-step guide the AI has been trained to follow for common operations.</p>
+        </div>
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <h4 style="color:var(--blue);margin-bottom:8px;">🔧 Tool</h4>
+          <p style="color:var(--text-secondary);font-size:0.9rem;">Executes the chosen <strong>tool call</strong> — API request, database query, file write — and returns the result to the AI Brain.</p>
+        </div>
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <h4 style="color:var(--blue);margin-bottom:8px;">✨ Answer</h4>
+          <p style="color:var(--text-secondary);font-size:0.9rem;">Assembles the final <strong>response</strong> using the enriched context. Includes the explainability trace with a unique <code style="color:var(--orange);">trace_id</code>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>🧠 Memory Platform Academy · <a href="index.html" style="color: var(--text-muted);">Back to Home</a></p>
+    </div>
+  </footer>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: { primaryColor: '#58a6ff', primaryTextColor: '#e6edf3', primaryBorderColor: '#58a6ff', lineColor: '#58a6ff', secondaryColor: '#d29922', tertiaryColor: '#1c2128' }, flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+
+    const stepDetails = [
+      {
+        icon: '❓', title: 'Phase 1: Question',
+        content: `<p>The AI receives the user's question and begins processing. This is where the <strong>Action Router</strong> determines what kind of request this is.</p>
+        <div class="highlight-box">POST /api/v1 {"action": "context.build", "params": {"user_id": "user_1", "query": "What's the user's preferred theme and how do I set it?"}}</div>
+        <p>Key decisions at this stage:</p>
+        <ul>
+          <li>📌 Classify intent (question, command, follow-up)</li>
+          <li>📌 Extract entities (user_id, theme, preference)</li>
+          <li>📌 Route to appropriate handler (context.build)</li>
+        </ul>`
+      },
+      {
+        icon: '🧠', title: 'Phase 2: Memory Recall',
+        content: `<p>The AI searches <strong>episodic memory</strong> for relevant past experiences with this user.</p>
+        <div class="highlight-box">Memory Query: "preferred theme" for user_1<br/><br/>Results:<br/>• "User mentioned dark mode preference" — score: 0.92<br/>• "User used light theme temporarily" — score: 0.34</div>
+        <p>The Policy Engine evaluates importance:</p>
+        <ul>
+          <li>✅ <strong>"dark mode"</strong> — importance 8.2/10 → PASS (above threshold 5.0)</li>
+          <li>❌ <strong>"light theme"</strong> — importance 2.1/10 → DISCARD (below threshold)</li>
+        </ul>
+        <p>Only the <strong>high-importance memory</strong> passes through to the Context Builder.</p>`
+      },
+      {
+        icon: '📚', title: 'Phase 3: Knowledge Fetch',
+        content: `<p>The AI queries <strong>semantic knowledge</strong> — documentation about the theme API.</p>
+        <div class="highlight-box">Knowledge Query: "set theme API documentation"<br/><br/>Results from Obsidian:<br/>• api.md → "api.setTheme({theme: 'dark'|'light'})" — score: 0.88<br/>• config.md → "Theme is set via API" — score: 0.72</div>
+        <p>Knowledge providers searched:</p>
+        <ul>
+          <li>📝 <strong>Obsidian</strong> — found api.md with theme API docs</li>
+          <li>⚡ <strong>Skills</strong> — no matching skill for "theme"</li>
+          <li>🗂️ <strong>Archive</strong> — not consulted (recent docs available)</li>
+        </ul>`
+      },
+      {
+        icon: '⚡', title: 'Phase 4: Skill Applied',
+        content: `<p>The AI matches the query to a <strong>procedural skill</strong> — a known workflow for handling preference-based configuration changes.</p>
+        <div class="highlight-box">Skill Match: "user-preference-response"<br/><br/>Steps:<br/>1. Retrieve user's stored preference (memory.query)<br/>2. Look up corresponding API call (knowledge.query)<br/>3. Execute tool with parameters<br/>4. Confirm result to user</div>
+        <p>Skills combine <strong>memory + knowledge</strong> into a repeatable workflow. This is the difference between knowing the answer and knowing <em>how to produce the answer reliably</em>.</p>`
+      },
+      {
+        icon: '🔧', title: 'Phase 5: Tool Execution',
+        content: `<p>The AI invokes the actual <strong>tool call</strong> to perform the action.</p>
+        <div class="highlight-box">Tool: api.setTheme()<br/><br/>Parameters:<br/>{"theme": "dark"}<br/><br/>Result:<br/>{"status": "success", "theme": "dark"}</div>
+        <p>Tool execution is logged in the explainability trace:</p>
+        <ul>
+          <li>📌 Tool called: <code>api.setTheme</code></li>
+          <li>📌 Parameters: <code>{"theme": "dark"}</code></li>
+          <li>📌 Duration: <code>42ms</code></li>
+          <li>📌 Result: <code>success</code></li>
+        </ul>`
+      },
+      {
+        icon: '✨', title: 'Phase 6: Answer Output',
+        content: `<p>The AI Brain assembles the final response using the <strong>enriched context</strong> from all previous phases.</p>
+        <div class="highlight-box">🤖 "The user prefers dark mode. Use api.setTheme({theme: 'dark'})."<br/><br/>Trace ID: trace_a1b2c3d4<br/>Decision log: [memory, knowledge, skill, tool]</div>
+        <p>Every answer includes:</p>
+        <ul>
+          <li>✅ The response text</li>
+          <li>✅ <strong>trace_id</strong> — links to the full decision trace</li>
+          <li>✅ <strong>memory sources</strong> — which memories were used (and filtered)</li>
+          <li>✅ <strong>knowledge sources</strong> — which docs were consulted</li>
+          <li>✅ <strong>tool calls</strong> — what was executed (if applicable)</li>
+        </ul>`
+      }
+    ];
+
+    function showStep(idx) {
+      // Update circles
+      document.querySelectorAll('.step-circle').forEach((c, i) => {
+        c.classList.toggle('active', i === idx);
+      });
+
+      // Update buttons
+      document.querySelectorAll('.step-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === idx);
+      });
+
+      // Update detail
+      const detail = stepDetails[idx];
+      const panel = document.getElementById('detailPanel');
+      panel.innerHTML = `<h3><span class="icon">${detail.icon}</span> ${detail.title}</h3>${detail.content}`;
+    }
+  </script>
+</body>
+</html>

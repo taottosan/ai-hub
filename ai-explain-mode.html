@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Explain Mode 💡 — Memory Platform Academy</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-card: #1c2128;
+      --border: #30363d; --blue: #58a6ff; --blue-hover: #79b8ff;
+      --orange: #d29922; --text-primary: #e6edf3; --text-secondary: #8b949e; --text-muted: #6e7681;
+      --success: #3fb950; --danger: #f85149; --purple: #bc8cff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary); color: var(--text-primary); line-height: 1.6;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+    .top-nav {
+      background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+    .top-nav .container { display: flex; align-items: center; gap: 16px; }
+    .top-nav a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; }
+    .top-nav a:hover { color: var(--blue); }
+
+    .hero {
+      padding: 56px 0 40px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 12px; }
+    .hero h1 span { color: var(--blue); }
+    .hero h1 .accent { color: var(--orange); }
+    .hero p { color: var(--text-secondary); font-size: 1.1rem; max-width: 640px; margin: 0 auto; }
+
+    .section {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 36px; margin-bottom: 28px;
+    }
+    .section h2 {
+      font-size: 1.4rem; margin-bottom: 20px;
+      color: var(--blue);
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+
+    /* Decision trace */
+    .trace-card {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; margin-bottom: 16px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .trace-card:hover { border-color: var(--blue); }
+    .trace-card .trace-header {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .trace-card .trace-title {
+      font-weight: 600; display: flex; align-items: center; gap: 10px;
+    }
+    .trace-card .trace-badge {
+      font-size: 0.72rem; padding: 2px 10px; border-radius: 8px;
+      font-weight: 600;
+    }
+    .trace-badge.pass { background: rgba(63,185,80,0.12); color: var(--success); border: 1px solid rgba(63,185,80,0.2); }
+    .trace-badge.filter { background: rgba(210,153,34,0.12); color: var(--orange); border: 1px solid rgba(210,153,34,0.2); }
+    .trace-badge.warn { background: rgba(248,81,73,0.12); color: var(--danger); border: 1px solid rgba(248,81,73,0.2); }
+    .trace-badge.info { background: rgba(88,166,255,0.12); color: var(--blue); border: 1px solid rgba(88,166,255,0.2); }
+
+    .trace-detail {
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary); font-size: 0.9rem;
+      display: none;
+    }
+    .trace-detail.open { display: block; }
+    .trace-detail .spec-box {
+      background: #0d1117; border: 1px solid var(--border);
+      border-radius: 6px; padding: 12px; margin: 10px 0;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 0.82rem; color: var(--text-secondary);
+      overflow-x: auto;
+    }
+    .trace-detail strong { color: var(--text-primary); }
+
+    /* Summary metrics */
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px; margin: 20px 0;
+    }
+    .metric-card {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; text-align: center;
+    }
+    .metric-card .metric-value { font-size: 1.8rem; font-weight: 700; color: var(--blue); }
+    .metric-card .metric-value.orange { color: var(--orange); }
+    .metric-card .metric-value.green { color: var(--success); }
+    .metric-card .metric-label {
+      font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;
+    }
+
+    .mermaid-explain {
+      background: #0d1117; border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; margin: 16px 0;
+      text-align: center; overflow-x: auto;
+    }
+
+    .toggle-btn {
+      background: none; border: none; color: var(--blue);
+      cursor: pointer; font-size: 0.85rem;
+    }
+
+    footer {
+      text-align: center; padding: 32px 0 48px;
+      color: var(--text-muted); font-size: 0.85rem;
+      border-top: 1px solid var(--border); margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="container">
+      <a href="index.html">🏠 Academy Home</a>
+      <span style="color: var(--text-muted);">·</span>
+      <span style="color: var(--text-secondary); font-size: 0.9rem;">💡 AI Explain Mode</span>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <h1>💡 <span>AI Explain</span> <span class="accent">Mode</span></h1>
+      <p>Why did the AI answer this way? Every decision is traced — memory lookups, policy decisions, skill matches, and tool calls.</p>
+    </div>
+
+    <!-- Summary -->
+    <div class="section">
+      <h2>🔍 Trace: <code style="color:var(--orange);">trace_a1b2c3d4</code></h2>
+      <p style="color:var(--text-secondary);margin-bottom:16px;">Full explainability trace for the question: <strong>"What's the user's preferred theme and how do I set it?"</strong></p>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-value green">4</div>
+          <div class="metric-label">Memories Retrieved</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">1</div>
+          <div class="metric-label">Memories Used</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value orange">3</div>
+          <div class="metric-label">Memories Filtered</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value green">2</div>
+          <div class="metric-label">Knowledge Sources</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">1</div>
+          <div class="metric-label">Skills Matched</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value green">1</div>
+          <div class="metric-label">Tool Calls</div>
+        </div>
+      </div>
+
+      <div class="mermaid-explain">
+        <pre class="mermaid">
+graph TD
+    subgraph Trace["📋 Full Decision Trace"]
+        Q["❓ Question"] --> R["📡 Action Router"]
+        R --> MQ["🔍 memory.query"]
+        R --> KQ["📚 knowledge.query"]
+
+        subgraph Memory["🧠 Memory (4 retrieved, 1 used)"]
+            M1["'dark mode'<br/>score: 0.92"] --> P["⚙️ Policy Engine"]
+            M2["'light theme'<br/>score: 0.34"] --> P
+            M3["'font size'<br/>score: 0.22"] --> P
+            M4["'accent color'<br/>score: 0.18"] --> P
+            P -->|"PASS ✓"| M_PASS["1 memory passed"]
+            P -->|"DISCARD ✗"| M_DROP["3 filtered out"]
+        end
+
+        subgraph Knowledge["📚 Knowledge (2 sources)"]
+            K1["api.md → setTheme()"] --> CB["🔗 Context Builder"]
+            K2["config.md → theme params"] --> CB
+        end
+
+        M_PASS --> CB
+        CB --> B["🧠 AI Brain"]
+        B --> SK["⚡ Skill: user-preference-response"]
+        SK --> TL["🔧 Tool: api.setTheme()"]
+        TL --> A["✨ Answer"]
+    end
+
+    style Q fill:#58a6ff22,stroke:#58a6ff
+    style A fill:#3fb95022,stroke:#3fb950
+    style M_DROP fill:#f8514922,stroke:#f85149
+</pre>
+      </div>
+    </div>
+
+    <!-- Detailed trace entries -->
+    <div class="section">
+      <h2>📋 Detailed Decision Log</h2>
+      <p style="color:var(--text-secondary);margin-bottom:16px;">Click each entry to expand or collapse the full decision detail.</p>
+
+      <!-- Entry 1: Action Router -->
+      <div class="trace-card">
+        <div class="trace-header" onclick="toggleTrace(this)">
+          <div class="trace-title">
+            <span>📡</span>
+            <span>Action Router</span>
+            <span class="trace-badge info">ROUTE</span>
+          </div>
+          <span style="color:var(--text-muted);font-size:0.8rem;">0.2ms</span>
+        </div>
+        <div class="trace-detail">
+          <p><strong>Decision:</strong> Route to <code>context.build</code> handler</p>
+          <div class="spec-box">{
+  "action": "context.build",
+  "params": {
+    "user_id": "user_1",
+    "query": "What's the user's preferred theme and how do I set it?"
+  },
+  "classification": "question",
+  "entities": ["theme", "preference", "user_1"]
+}</div>
+          <p><strong>Why this route?</strong> The query contains a question about a user preference combined with a "how to" request. The router classifies this as a <code>context.build</code> action because it needs both memory retrieval (preference) and knowledge lookup (how to set it).</p>
+        </div>
+      </div>
+
+      <!-- Entry 2: Memory Query -->
+      <div class="trace-card">
+        <div class="trace-header" onclick="toggleTrace(this)">
+          <div class="trace-title">
+            <span>🔍</span>
+            <span>Memory Query</span>
+            <span class="trace-badge pass">4 MATCHES</span>
+          </div>
+          <span style="color:var(--text-muted);font-size:0.8rem;">8.3ms</span>
+        </div>
+        <div class="trace-detail">
+          <p><strong>Query:</strong> "preferred theme" for user_id=<code>user_1</code></p>
+          <div class="spec-box">Provider: InMemory (Gold Standard)<br/><br/>Results:<br/>[0] "User prefers dark mode" — score: 0.92, importance: 8.2<br/>[1] "User tried light theme" — score: 0.34, importance: 2.1<br/>[2] "User asked about font size" — score: 0.22, importance: 1.5<br/>[3] "User set accent color" — score: 0.18, importance: 1.2</div>
+          <p><strong>Provider:</strong> InMemory · <strong>Query type:</strong> semantic similarity · <strong>Embedding model:</strong> text-embedding-3-small</p>
+        </div>
+      </div>
+
+      <!-- Entry 3: Policy Engine -->
+      <div class="trace-card">
+        <div class="trace-header" onclick="toggleTrace(this)">
+          <div class="trace-title">
+            <span>⚙️</span>
+            <span>Policy Engine — Importance Check</span>
+            <span class="trace-badge pass">THRESHOLD: 5.0</span>
+          </div>
+          <span style="color:var(--text-muted);font-size:0.8rem;">1.1ms</span>
+        </div>
+        <div class="trace-detail">
+          <div class="spec-box">Threshold: 5.0<br/><br/>Memory "dark mode" — importance 8.2 → <span style="color:var(--success)">✅ PASS (kept)</span><br/>Memory "light theme" — importance 2.1 → <span style="color:var(--orange)">❌ DISCARD (below threshold)</span><br/>Memory "font size" — importance 1.5 → <span style="color:var(--orange)">❌ DISCARD (below threshold)</span><br/>Memory "accent color" — importance 1.2 → <span style="color:var(--orange)">❌ DISCARD (below threshold)</span></div>
+          <p><strong>Policy Simulator equivalent:</strong></p>
+          <div class="spec-box">python tools/policy_simulator.py --content "User prefers dark mode" --importance critical<br/><br/>→ PASS (importance=8.2 ≥ threshold=5.0)</div>
+          <p><strong>Why 5.0?</strong> The threshold is configured in <code>config/production.yaml</code>. It balances recall (don't discard important context) against precision (don't include noise).</p>
+        </div>
+      </div>
+
+      <!-- Entry 4: Knowledge Query -->
+      <div class="trace-card">
+        <div class="trace-header" onclick="toggleTrace(this)">
+          <div class="trace-title">
+            <span>📚</span>
+            <span>Knowledge Query</span>
+            <span class="trace-badge info">2 SOURCES</span>
+          </div>
+          <span style="color:var(--text-muted);font-size:0.8rem;">45.2ms</span>
+        </div>
+        <div class="trace-detail">
+          <p><strong>Query:</strong> "set theme API documentation"</p>
+          <div class="spec-box">Provider: Obsidian (Knowledge Provider)<br/>Vault: /home/user/obsidian-vault<br/><br/>Results:<br/>[0] api.md → "api.setTheme({theme: 'dark'|'light'})" — score: 0.88<br/>[1] config.md → "Theme is set via the API" — score: 0.72</div>
+          <p><strong>Also consulted:</strong></p>
+          <ul>
+            <li>⚡ Skills — "user-preference-response" skill matched (see below)</li>
+            <li>🗂️ Archive — skipped (recent docs found in primary sources)</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Entry 5: Skill Match -->
+      <div class="trace-card">
+        <div class="trace-header" onclick="toggleTrace(this)">
+          <div class="trace-title">
+            <span>⚡</span>
+            <span>Skill Match</span>
+            <span class="trace-badge pass">1 SKILL</span>
+          </div>
+          <span style="color:var(--text-muted);font-size:0.8rem;">2.4ms</span>
+        </div>
+        <div class="trace-detail">
+          <p><strong>Matched Skill:</strong> <code>user-preference-response</code></p>
+          <div class="spec-box">Skill: user-preference-response<br/>Type: procedural<br/>Confidence: 0.91<br/><br/>Steps:<br/>1. memory.query("preference" + [entity])<br/>2. knowledge.query("API" + [action])<br/>3. Determine tool parameters from memory + knowledge<br/>4. Execute tool call<br/>5. Format response with preference info + confirmation</div>
+        </div>
+      </div>
+
+      <!-- Entry 6: Tool Call -->
+      <div class="trace-card">
+        <div class="trace-header" onclick="toggleTrace(this)">
+          <div class="trace-title">
+            <span>🔧</span>
+            <span>Tool Execution</span>
+            <span class="trace-badge pass">SUCCESS</span>
+          </div>
+          <span style="color:var(--text-muted);font-size:0.8rem;">42.0ms</span>
+        </div>
+        <div class="trace-detail">
+          <p><strong>Tool:</strong> <code>api.setTheme()</code></p>
+          <div class="spec-box">Parameters: {"theme": "dark"}<br/>Duration: 42ms<br/>Status: success<br/>Response: {"status": "success", "theme": "dark"}</div>
+          <p><strong>Decision rationale:</strong> Memory recalled "dark mode" preference → Knowledge provided the <code>api.setTheme()</code> syntax → Skill "user-preference-response" combined both → Tool executed with <code>{"theme": "dark"}</code>.</p>
+        </div>
+      </div>
+
+      <!-- Entry 7: Final Answer -->
+      <div class="trace-card">
+        <div class="trace-header" onclick="toggleTrace(this)">
+          <div class="trace-title">
+            <span>✨</span>
+            <span>Final Answer Assembly</span>
+            <span class="trace-badge pass">COMPLETE</span>
+          </div>
+          <span style="color:var(--text-muted);font-size:0.8rem;">0.8ms</span>
+        </div>
+        <div class="trace-detail">
+          <p><strong>Assembled Response:</strong></p>
+          <div class="spec-box">"The user prefers dark mode. Use api.setTheme({theme: 'dark'})."</div>
+          <p><strong>Context sources used:</strong></p>
+          <ul>
+            <li>🧠 Memory: "User prefers dark mode" (importance: 8.2)</li>
+            <li>📚 Knowledge: api.md → setTheme documentation</li>
+            <li>⚡ Skill: user-preference-response (v1.2)</li>
+            <li>🔧 Tool: api.setTheme → success (42ms)</li>
+          </ul>
+          <p><strong>Trace ID:</strong> <code style="color:var(--orange);">trace_a1b2c3d4</code></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Why explainability matters -->
+    <div class="section">
+      <h2>🎯 Why Explainability Matters</h2>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <h4 style="color:var(--blue);margin-bottom:8px;">🔍 Debugging</h4>
+          <p style="color:var(--text-secondary);font-size:0.9rem;">When an answer is wrong, the trace shows exactly which memory was retrieved, which policy rule fired, and which knowledge source was consulted. No more guessing.</p>
+        </div>
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <h4 style="color:var(--blue);margin-bottom:8px;">🛡️ Trust & Safety</h4>
+          <p style="color:var(--text-secondary);font-size:0.9rem;">Every decision is auditable. You can verify that the AI didn't use privileged information, that policy rules were correctly applied, and that tool calls were authorized.</p>
+        </div>
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <h4 style="color:var(--blue);margin-bottom:8px;">📊 Performance</h4>
+          <p style="color:var(--text-secondary);font-size:0.9rem;">Trace data reveals bottlenecks. If memory queries take 200ms but should take 20ms, or if too many low-importance memories pass through, the trace shows where to optimize.</p>
+        </div>
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;padding:20px;">
+          <h4 style="color:var(--blue);margin-bottom:8px;">🎓 Learning</h4>
+          <p style="color:var(--text-secondary);font-size:0.9rem;">Explainability traces are the <strong>training data</strong> for future improvements. Patterns in trace data teach the system which memories matter, which skills are effective, and which tools are reliable.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>🧠 Memory Platform Academy · <a href="index.html" style="color: var(--text-muted);">Back to Home</a></p>
+    </div>
+  </footer>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: { primaryColor: '#58a6ff', primaryTextColor: '#e6edf3', primaryBorderColor: '#58a6ff', lineColor: '#58a6ff', secondaryColor: '#d29922', tertiaryColor: '#1c2128' }, flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+
+    function toggleTrace(headerEl) {
+      const detail = headerEl.parentElement.querySelector('.trace-detail');
+      detail.classList.toggle('open');
+    }
+  </script>
+</body>
+</html>

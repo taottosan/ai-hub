@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI University 🎓 — Memory Platform Academy</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-card: #1c2128;
+      --border: #30363d; --blue: #58a6ff; --blue-hover: #79b8ff;
+      --orange: #d29922; --text-primary: #e6edf3; --text-secondary: #8b949e; --text-muted: #6e7681;
+      --success: #3fb950; --danger: #f85149; --purple: #bc8cff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary); color: var(--text-primary); line-height: 1.6;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+    .top-nav {
+      background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+    .top-nav .container { display: flex; align-items: center; gap: 16px; }
+    .top-nav a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; }
+    .top-nav a:hover { color: var(--blue); }
+
+    .hero {
+      padding: 56px 0 40px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 12px; }
+    .hero h1 span { color: var(--blue); }
+    .hero .accent { color: var(--orange); }
+    .hero p { color: var(--text-secondary); font-size: 1.1rem; max-width: 640px; margin: 0 auto; }
+
+    /* Faculty Grid */
+    .faculty-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin: 32px 0;
+    }
+    .faculty-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px;
+      transition: all 0.2s; cursor: pointer;
+    }
+    .faculty-card:hover {
+      border-color: var(--blue);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    .faculty-card .faculty-code {
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      color: var(--orange); letter-spacing: 0.06em;
+    }
+    .faculty-card h3 {
+      font-size: 1.1rem; margin: 6px 0 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .faculty-card p {
+      color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5;
+    }
+    .faculty-card .course-count {
+      display: inline-block; margin-top: 12px;
+      font-size: 0.78rem; color: var(--blue);
+      background: rgba(88,166,255,0.08);
+      padding: 3px 12px; border-radius: 8px;
+      border: 1px solid rgba(88,166,255,0.15);
+    }
+
+    /* Roadmap */
+    .roadmap-section {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 36px; margin: 28px 0;
+    }
+    .roadmap-section h2 {
+      font-size: 1.4rem; margin-bottom: 20px;
+      color: var(--blue);
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+
+    .roadmap-path {
+      display: flex; flex-wrap: wrap; gap: 20px;
+      justify-content: center; margin: 20px 0;
+    }
+    .roadmap-node {
+      display: flex; flex-direction: column; align-items: center;
+      min-width: 120px;
+    }
+    .roadmap-node .node-box {
+      background: var(--bg-secondary); border: 2px solid var(--border);
+      border-radius: 10px; padding: 16px 20px; text-align: center;
+      transition: all 0.2s;
+    }
+    .roadmap-node .node-box:hover { border-color: var(--blue); }
+    .roadmap-node .node-code { font-size: 0.7rem; color: var(--orange); font-weight: 700; }
+    .roadmap-node .node-icon { font-size: 1.6rem; }
+    .roadmap-node .node-label { font-size: 0.85rem; font-weight: 600; margin-top: 4px; }
+    .roadmap-arrow { display: flex; align-items: center; color: var(--text-muted); font-size: 1.8rem; }
+
+    .mermaid-road {
+      background: #0d1117; border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; margin: 20px 0;
+      text-align: center; overflow-x: auto;
+    }
+
+    /* Detail panel */
+    .detail-panel {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 10px; padding: 24px; margin-top: 24px;
+      display: none;
+    }
+    .detail-panel.open { display: block; }
+    .detail-panel h3 { color: var(--blue); margin-bottom: 12px; }
+    .detail-panel .course-list {
+      list-style: none; padding: 0;
+    }
+    .detail-panel .course-item {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .detail-panel .course-item:last-child { border-bottom: none; }
+    .detail-panel .course-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--blue); flex-shrink: 0;
+    }
+    .detail-panel .course-dot.orange { background: var(--orange); }
+    .detail-panel .course-name { color: var(--text-primary); }
+    .detail-panel .course-desc { color: var(--text-muted); font-size: 0.85rem; margin-left: auto; }
+
+    .back-button {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--blue); cursor: pointer; font-size: 0.9rem;
+      margin-bottom: 16px; background: none; border: none;
+    }
+    .back-button:hover { color: var(--blue-hover); }
+
+    footer {
+      text-align: center; padding: 32px 0 48px;
+      color: var(--text-muted); font-size: 0.85rem;
+      border-top: 1px solid var(--border); margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="container">
+      <a href="index.html">🏠 Academy Home</a>
+      <span style="color: var(--text-muted);">·</span>
+      <span style="color: var(--text-secondary); font-size: 0.9rem;">🎓 AI University</span>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <h1>🎓 <span>AI</span> <span class="accent">University</span></h1>
+      <p>13 faculties covering everything from Memory Fundamentals to Advanced Orchestration. Organized by discipline and difficulty.</p>
+    </div>
+
+    <!-- Quick roadmap -->
+    <div class="roadmap-section">
+      <h2>🗺️ Learning Roadmap</h2>
+      <p style="color:var(--text-secondary);margin-bottom:16px;">Recommended path from beginner to expert:</p>
+
+      <div class="roadmap-path">
+        <div class="roadmap-node">
+          <div class="node-box">
+            <div class="node-code">FAC-01</div>
+            <div class="node-icon">📘</div>
+            <div class="node-label">Fundamentals</div>
+          </div>
+        </div>
+        <span class="roadmap-arrow">→</span>
+        <div class="roadmap-node">
+          <div class="node-box">
+            <div class="node-code">FAC-02-05</div>
+            <div class="node-icon">🔧</div>
+            <div class="node-label">Core Skills</div>
+          </div>
+        </div>
+        <span class="roadmap-arrow">→</span>
+        <div class="roadmap-node">
+          <div class="node-box">
+            <div class="node-code">FAC-06-09</div>
+            <div class="node-icon">⚡</div>
+            <div class="node-label">Advanced</div>
+          </div>
+        </div>
+        <span class="roadmap-arrow">→</span>
+        <div class="roadmap-node">
+          <div class="node-box">
+            <div class="node-code">FAC-10-13</div>
+            <div class="node-icon">🏆</div>
+            <div class="node-label">Expert</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mermaid-road">
+        <pre class="mermaid">
+graph LR
+    F1["📘 FAC-01<br/>Fundamentals"] --> F2["🔧 FAC-02<br/>Providers"]
+    F2 --> F3["🔧 FAC-03<br/>Policies"]
+    F3 --> F4["🔧 FAC-04<br/>Context"]
+    F4 --> F5["🔧 FAC-05<br/>Memory Ops"]
+    F5 --> F6["⚡ FAC-06<br/>Embeddings"]
+    F6 --> F7["⚡ FAC-07<br/>Explainability"]
+    F7 --> F8["⚡ FAC-08<br/>Conformance"]
+    F8 --> F9["⚡ FAC-09<br/>Benchmark"]
+    F9 --> F10["🏆 FAC-10<br/>Scaling"]
+    F10 --> F11["🏆 FAC-11<br/>Integration"]
+    F11 --> F12["🏆 FAC-12<br/>Orchestration"]
+    F12 --> F13["🏆 FAC-13<br/>Capstone"]
+    style F1 fill:#58a6ff22,stroke:#58a6ff
+    style F13 fill:#d2992222,stroke:#d29922
+</pre>
+      </div>
+    </div>
+
+    <!-- Faculty Grid -->
+    <h2 style="font-size:1.4rem;color:var(--blue);margin-bottom:16px;">📚 Faculties</h2>
+    <p style="color:var(--text-secondary);margin-bottom:20px;">Click on a faculty to see its courses.</p>
+
+    <div id="facultyList">
+      <div class="faculty-grid" id="facultyGrid">
+        <!-- Dynamically loaded -->
+      </div>
+    </div>
+
+    <!-- Detail -->
+    <div class="detail-panel" id="facultyDetail">
+      <button class="back-button" onclick="closeDetail()">← Back to All Faculties</button>
+      <h3 id="detailTitle"></h3>
+      <p id="detailDesc" style="color:var(--text-secondary);margin-bottom:16px;"></p>
+      <ul class="course-list" id="detailCourses"></ul>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>🧠 Memory Platform Academy · <a href="index.html" style="color: var(--text-muted);">Back to Home</a></p>
+    </div>
+  </footer>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: { primaryColor: '#58a6ff', primaryTextColor: '#e6edf3', primaryBorderColor: '#58a6ff', lineColor: '#58a6ff', secondaryColor: '#d29922', tertiaryColor: '#1c2128' }, flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+
+    const faculties = [
+      {
+        id: 'fac-01', code: 'FAC-01', icon: '📘', name: 'Memory Fundamentals',
+        desc: 'Core concepts: What is memory? Memory vs Knowledge. The Memory Object model. Understanding traces, importance, and recall.',
+        courses: [
+          'Introduction to AI Memory Systems',
+          'Memory ≠ Knowledge: The Core Distinction',
+          'MemoryObject & ContextObject Schemas',
+          'Understanding Traces & Trace IDs',
+          'Importance Scoring Fundamentals'
+        ]
+      },
+      {
+        id: 'fac-02', code: 'FAC-02', icon: '🔌', name: 'Provider Architecture',
+        desc: 'Deep dive into MemoryProvider and KnowledgeProvider ABCs. Building, testing, and integrating providers.',
+        courses: [
+          'MemoryProvider ABC — store, query, get, delete',
+          'KnowledgeProvider ABC — fetch, search, index',
+          'InMemory Provider: Gold Standard Walkthrough',
+          'Mem0 Integration Guide',
+          'Honcho for Multi-Agent Memory',
+          'Obsidian Knowledge Provider',
+          'Skills & Archive Providers'
+        ]
+      },
+      {
+        id: 'fac-03', code: 'FAC-03', icon: '⚙️', name: 'Policy Engine',
+        desc: 'How the Policy Engine evaluates importance. Threshold tuning. Pre-storage filtering and quality gates.',
+        courses: [
+          'Policy Engine Architecture',
+          'Importance Thresholds — Theory & Practice',
+          'Building Custom Policy Rules',
+          'Policy Simulator Deep Dive',
+          'Policy Performance Optimization'
+        ]
+      },
+      {
+        id: 'fac-04', code: 'FAC-04', icon: '🔗', name: 'Context Building',
+        desc: 'How Context Builder merges and ranks results from all providers. Scoring, deduplication, and enrichment.',
+        courses: [
+          'Context Builder Architecture',
+          'Merge Strategies — Union, Intersection, Ranked',
+          'Recency vs Importance Weighting',
+          'Deduplication & Relevance Filtering',
+          'Context Enrichment Pipelines'
+        ]
+      },
+      {
+        id: 'fac-05', code: 'FAC-05', icon: '🔄', name: 'Memory Operations',
+        desc: 'Day-to-day operations: storing, querying, updating, and deleting memories. Working with the API.',
+        courses: [
+          'API Action Routing — POST /api/v1',
+          'memory.store — Creating Memories',
+          'memory.query — Semantic Search',
+          'memory.get — Direct Retrieval',
+          'memory.delete — Cleanup & TTL',
+          'context.build — Full Pipeline'
+        ]
+      },
+      {
+        id: 'fac-06', code: 'FAC-06', icon: '🧬', name: 'Embeddings & Search',
+        desc: 'Vector embeddings, similarity search, embedding model selection, and multi-modal memory search.',
+        courses: [
+          'Embedding Models — text-embedding-3-small, ada, etc.',
+          'Vector Database Options (PostgreSQL, Pinecone, Qdrant)',
+          'Similarity Search — Cosine, Dot Product, Euclidean',
+          'Hybrid Search — Semantic + Keyword',
+          'Multi-Modal Memory Search'
+        ]
+      },
+      {
+        id: 'fac-07', code: 'FAC-07', icon: '💡', name: 'Explainability',
+        desc: 'The explainability trace system. Reading traces, debugging decisions, building trust through transparency.',
+        courses: [
+          'Explainability Trace Format & Schema',
+          'Reading Decision Traces',
+          'Tracing Memory → Knowledge → Skill → Tool',
+          'Debugging with Trace IDs',
+          'Building Custom Trace Visualizers'
+        ]
+      },
+      {
+        id: 'fac-08', code: 'FAC-08', icon: '🧪', name: 'Conformance Testing',
+        desc: 'The conformance test suite. Mock provider as Gold Standard. Writing and running conformance tests.',
+        courses: [
+          'Conformance Testing Philosophy',
+          'Mock Provider: Gold Standard Reference',
+          'Running the 15-Test Conformance Suite',
+          'Writing Conformance Tests for New Providers',
+          'CI/CD Integration for Conformance'
+        ]
+      },
+      {
+        id: 'fac-09', code: 'FAC-09', icon: '📊', name: 'Benchmarking',
+        desc: 'Golden Dataset methodology. Running benchmarks, interpreting scores, regression detection.',
+        courses: [
+          'Golden Dataset — Core (15) vs Full (200)',
+          'Benchmark Runner Architecture',
+          'Score Calculation & Normalization',
+          'Regression Detection (>5% blocks merge)',
+          'Adding New Benchmark Cases'
+        ]
+      },
+      {
+        id: 'fac-10', code: 'FAC-10', icon: '📈', name: 'Scaling & Performance',
+        desc: 'Scaling memory providers horizontally. Caching strategies. Latency optimization and throughput tuning.',
+        courses: [
+          'Horizontal Scaling for Memory Providers',
+          'Caching Strategies — Local, Distributed, Hybrid',
+          'Latency Optimization (p99 < 100ms)',
+          'Throughput Tuning (10K+ QPS)',
+          'Memory Compaction & Garbage Collection'
+        ]
+      },
+      {
+        id: 'fac-11', code: 'FAC-11', icon: '🌐', name: 'Integration Patterns',
+        desc: 'Integrating the Memory Platform with external systems. Webhooks, event streams, custom pipelines.',
+        courses: [
+          'Webhook Integration for External Memory Sources',
+          'Event Stream Processing (Kafka, RabbitMQ)',
+          'Custom Pipeline Construction',
+          'Obsidian Real-Time Sync',
+          'Cloud Provider Integration (AWS, GCP, Azure)'
+        ]
+      },
+      {
+        id: 'fac-12', code: 'FAC-12', icon: '🤖', name: 'Multi-Agent Orchestration',
+        desc: 'Memory sharing between agents. Conflict resolution. Agent-specific and shared memory spaces.',
+        courses: [
+          'Agent Identity & Memory Scoping',
+          'Shared vs Private Memory Spaces',
+          'Memory Conflict Resolution',
+          'Inter-Agent Memory Transfer',
+          'Orchestrating Agent Memory Lifecycles'
+        ]
+      },
+      {
+        id: 'fac-13', code: 'FAC-13', icon: '🏆', name: 'Capstone Project',
+        desc: 'Build a complete production-ready Memory Platform deployment. From design to deployment to monitoring.',
+        courses: [
+          'Capstone: System Design Review',
+          'Capstone: Provider Selection & Configuration',
+          'Capstone: Policy & Context Tuning',
+          'Capstone: Deployment & Monitoring',
+          'Capstone: Performance Optimization & Wrap-up'
+        ]
+      }
+    ];
+
+    function renderFaculties() {
+      const grid = document.getElementById('facultyGrid');
+      grid.innerHTML = faculties.map(f => `
+        <div class="faculty-card" onclick="showDetail('${f.id}')">
+          <div class="faculty-code">${f.code}</div>
+          <h3>${f.icon} ${f.name}</h3>
+          <p>${f.desc}</p>
+          <span class="course-count">📚 ${f.courses.length} courses</span>
+        </div>
+      `).join('');
+    }
+
+    function showDetail(id) {
+      const f = faculties.find(x => x.id === id);
+      if (!f) return;
+
+      document.getElementById('facultyList').style.display = 'none';
+      const panel = document.getElementById('facultyDetail');
+      panel.classList.add('open');
+
+      document.getElementById('detailTitle').innerHTML = `${f.icon} ${f.code}: ${f.name}`;
+      document.getElementById('detailDesc').textContent = f.desc;
+
+      const list = document.getElementById('detailCourses');
+      list.innerHTML = f.courses.map((c, i) => `
+        <li class="course-item">
+          <span class="course-dot ${i % 2 === 0 ? 'orange' : ''}"></span>
+          <span class="course-name">${c}</span>
+          <span class="course-desc">Course ${String(i + 1).padStart(2, '0')}</span>
+        </li>
+      `).join('');
+    }
+
+    function closeDetail() {
+      document.getElementById('facultyList').style.display = 'block';
+      document.getElementById('facultyDetail').classList.remove('open');
+    }
+
+    renderFaculties();
+  </script>
+</body>
+</html>

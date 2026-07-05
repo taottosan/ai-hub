@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Troubleshooting Wizard 🔧 — Memory Platform Academy</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-card: #1c2128;
+      --border: #30363d; --blue: #58a6ff; --blue-hover: #79b8ff;
+      --orange: #d29922; --text-primary: #e6edf3; --text-secondary: #8b949e; --text-muted: #6e7681;
+      --success: #3fb950; --danger: #f85149; --purple: #bc8cff;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary); color: var(--text-primary); line-height: 1.6;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+    .top-nav {
+      background: var(--bg-secondary); border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+    }
+    .top-nav .container { display: flex; align-items: center; gap: 16px; }
+    .top-nav a { color: var(--text-secondary); text-decoration: none; font-size: 0.9rem; }
+    .top-nav a:hover { color: var(--blue); }
+
+    .hero {
+      padding: 56px 0 40px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 12px; }
+    .hero h1 span { color: var(--blue); }
+    .hero h1 .accent { color: var(--orange); }
+    .hero p { color: var(--text-secondary); font-size: 1.1rem; max-width: 640px; margin: 0 auto; }
+
+    /* Symptom Picker */
+    .symptom-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .symptom-btn {
+      background: var(--bg-card); border: 2px solid var(--border);
+      border-radius: 10px; padding: 22px 18px;
+      text-align: center; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .symptom-btn:hover { border-color: var(--blue); background: rgba(88,166,255,0.08); }
+    .symptom-btn.active { border-color: var(--orange); background: rgba(210,153,34,0.08); }
+    .symptom-btn .sym-icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+    .symptom-btn .sym-label { font-weight: 600; font-size: 0.95rem; }
+    .symptom-btn .sym-desc { color: var(--text-muted); font-size: 0.8rem; margin-top: 4px; }
+
+    /* Wizard Panel */
+    .wizard-panel {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 32px; margin-bottom: 28px;
+      min-height: 280px;
+    }
+    .wizard-progress {
+      display: flex; gap: 6px; margin-bottom: 24px;
+      justify-content: center;
+    }
+    .progress-dot {
+      width: 36px; height: 6px; border-radius: 3px;
+      background: var(--border); transition: all 0.3s;
+    }
+    .progress-dot.active { background: var(--blue); }
+    .progress-dot.done { background: var(--success); }
+    .progress-dot.error { background: var(--danger); }
+
+    .wizard-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .wizard-question-number {
+      background: var(--orange); color: #0d1117; font-weight: 700;
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+    }
+    .wizard-title { font-size: 1.15rem; font-weight: 600; }
+
+    .wizard-content {
+      color: var(--text-secondary); line-height: 1.7;
+    }
+    .wizard-content p { margin-bottom: 12px; }
+    .wizard-content .option-group {
+      display: flex; flex-direction: column; gap: 8px; margin: 16px 0;
+    }
+    .wizard-content .option-btn {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 18px;
+      color: var(--text-primary); cursor: pointer;
+      text-align: left; font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .wizard-content .option-btn:hover {
+      border-color: var(--blue); background: rgba(88,166,255,0.06);
+    }
+    .wizard-content .option-btn.selected {
+      border-color: var(--orange);
+      background: rgba(210,153,34,0.08);
+    }
+    .wizard-content code {
+      background: rgba(88,166,255,0.1); color: var(--orange);
+      padding: 2px 6px; border-radius: 4px; font-size: 0.88rem;
+    }
+    .wizard-content .fix-box {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 8px; padding: 18px; margin: 14px 0;
+      border-left: 3px solid var(--success);
+    }
+    .wizard-content .fix-box.warning-box {
+      border-left-color: var(--orange);
+    }
+    .wizard-content .fix-box h4 {
+      color: var(--success); margin-bottom: 8px; font-size: 0.95rem;
+    }
+    .wizard-content .fix-box.warning-box h4 { color: var(--orange); }
+
+    .wizard-nav {
+      display: flex; justify-content: space-between; margin-top: 24px;
+    }
+    .wiz-btn {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      color: var(--text-primary); padding: 10px 24px;
+      border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+    .wiz-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .wiz-btn.primary {
+      background: var(--blue); color: #0d1117; font-weight: 600;
+      border-color: var(--blue);
+    }
+    .wiz-btn.primary:hover { background: var(--blue-hover); }
+    .wiz-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .restart-btn {
+      display: block; margin: 20px auto 0;
+      background: transparent; border: 1px solid var(--danger);
+      color: var(--danger); padding: 8px 20px; border-radius: 8px;
+      cursor: pointer; font-size: 0.85rem;
+    }
+    .restart-btn:hover { background: rgba(248,81,49,0.1); }
+
+    /* Summary */
+    .summary-card {
+      text-align: center; padding: 32px;
+    }
+    .summary-card .check-icon { font-size: 3rem; margin-bottom: 12px; }
+    .summary-card h3 { color: var(--success); font-size: 1.4rem; margin-bottom: 8px; }
+    .summary-card p { color: var(--text-secondary); max-width: 500px; margin: 0 auto 16px; }
+
+    .mermaid-trouble {
+      background: #0d1117; border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; margin: 0 0 16px;
+      text-align: center; overflow-x: auto;
+    }
+
+    footer {
+      text-align: center; padding: 32px 0 48px;
+      color: var(--text-muted); font-size: 0.85rem;
+      border-top: 1px solid var(--border); margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="container">
+      <a href="index.html">🏠 Academy Home</a>
+      <span style="color: var(--text-muted);">·</span>
+      <span style="color: var(--text-secondary); font-size: 0.9rem;">🔧 Troubleshooting Wizard</span>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="hero">
+      <h1>🔧 <span>Troubleshooting</span> <span class="accent">Wizard</span></h1>
+      <p>Pick a symptom, answer 5 diagnostic questions, and get a guided fix.</p>
+    </div>
+
+    <!-- Step 0: Symptom Picker -->
+    <div id="symptomPicker">
+      <h3 style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em;">🎯 What's going wrong?</h3>
+      <div class="symptom-grid">
+        <div class="symptom-btn" data-symptom="no-memory">
+          <span class="sym-icon">🧠</span>
+          <span class="sym-label">No Memory Retrieved</span>
+          <span class="sym-desc">Expected memories aren't found</span>
+        </div>
+        <div class="symptom-btn" data-symptom="wrong-context">
+          <span class="sym-icon">📦</span>
+          <span class="sym-label">Wrong Context</span>
+          <span class="sym-desc">Irrelevant information in answers</span>
+        </div>
+        <div class="symptom-btn" data-symptom="provider-error">
+          <span class="sym-icon">🔌</span>
+          <span class="sym-label">Provider Error</span>
+          <span class="sym-desc">Connection or conformance failures</span>
+        </div>
+        <div class="symptom-btn" data-symptom="slow-response">
+          <span class="sym-icon">🐢</span>
+          <span class="sym-label">Slow Response</span>
+          <span class="sym-desc">High latency, timeout errors</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1+: Wizard -->
+    <div id="wizardPanel" style="display:none;">
+      <!-- Progress bar -->
+      <div class="wizard-progress" id="progressBar"></div>
+
+      <div class="wizard-panel">
+        <div class="wizard-header">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="wizard-question-number" id="qNumber">1</span>
+            <span class="wizard-title" id="qTitle">Diagnostic Question</span>
+          </div>
+          <span id="qProgress" style="font-size:0.85rem;color:var(--text-muted);">Question 1 of 5</span>
+        </div>
+        <div class="wizard-content" id="wizardContent">
+          <!-- Dynamic content -->
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <button class="wiz-btn" id="prevQBtn" onclick="prevQuestion()">← Previous</button>
+        <button class="wiz-btn primary" id="nextQBtn" onclick="nextQuestion()">Next →</button>
+      </div>
+    </div>
+
+    <button class="restart-btn" id="restartBtn" onclick="restartWizard()" style="display:none;">⟲ Start Over</button>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>🧠 Memory Platform Academy · <a href="index.html" style="color: var(--text-muted);">Back to Home</a></p>
+    </div>
+  </footer>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: { primaryColor: '#58a6ff', primaryTextColor: '#e6edf3', primaryBorderColor: '#58a6ff', lineColor: '#58a6ff', secondaryColor: '#d29922', tertiaryColor: '#1c2128' }, flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' } });
+
+    const symptoms = {
+      'no-memory': {
+        label: 'No Memory Retrieved',
+        icon: '🧠',
+        questions: [
+          {
+            q: 'Have you configured a Memory Provider (InMemory, Mem0, Honcho)?',
+            options: [
+              { label: '✅ Yes, one is configured', nextA: 1 },
+              { label: '❌ No, nothing is configured', nextA: 1 }
+            ]
+          },
+          {
+            q: 'Does your provider pass the conformance test suite?',
+            options: [
+              { label: '✅ Yes — 15/15 tests pass', nextA: 2 },
+              { label: '❌ No — some tests fail', nextA: 2 },
+              { label: '❓ I haven\'t run the tests', nextA: 2 }
+            ]
+          },
+          {
+            q: 'Check the trace. Are memories being stored at all?',
+            options: [
+              { label: '✅ Yes, memories are stored but not retrieved', nextA: 3 },
+              { label: '❌ No, memories are not being stored', nextA: 3 },
+              { label: '❓ I don\'t know how to check', nextA: 3 }
+            ]
+          },
+          {
+            q: 'Is the Policy Engine filtering out your memories?',
+            options: [
+              { label: '✅ Yes — memories are below importance threshold', nextA: 4 },
+              { label: '❌ No — importance scores look fine', nextA: 4 },
+              { label: '❓ I haven\'t checked policy logs', nextA: 4 }
+            ]
+          },
+          {
+            q: 'Is the Context Builder configured to use your provider?',
+            options: [
+              { label: '✅ Yes, Context Builder includes this provider', nextA: 'done' },
+              { label: '❌ No, it\'s missing from the config', nextA: 'done' }
+            ]
+          }
+        ]
+      },
+      'wrong-context': {
+        label: 'Wrong Context',
+        icon: '📦',
+        questions: [
+          {
+            q: 'Are irrelevant old memories appearing in responses?',
+            options: [
+              { label: '✅ Yes, old/stale memories are showing up', nextA: 1 },
+              { label: '❌ No, it\'s other irrelevant data', nextA: 1 }
+            ]
+          },
+          {
+            q: 'Check the memory scores. Are the irrelevant memories ranked highly?',
+            options: [
+              { label: '✅ Yes, they have high similarity scores', nextA: 2 },
+              { label: '❌ No, they\'re ranked low but still included', nextA: 2 }
+            ]
+          },
+          {
+            q: 'Is the Policy Engine threshold too low?',
+            options: [
+              { label: '✅ Yes, threshold is 0 or very low', nextA: 3 },
+              { label: '❌ No, threshold is set appropriately', nextA: 3 }
+            ]
+          },
+          {
+            q: 'Are there too many memories in the context?',
+            options: [
+              { label: '✅ Yes, max_memories is set too high', nextA: 4 },
+              { label: '❌ No, the count seems reasonable', nextA: 4 }
+            ]
+          },
+          {
+            q: 'Is recency weighting configured correctly?',
+            options: [
+              { label: '✅ No, recency_weight is too low', nextA: 'done' },
+              { label: '❌ The weights look balanced', nextA: 'done' }
+            ]
+          }
+        ]
+      },
+      'provider-error': {
+        label: 'Provider Error',
+        icon: '🔌',
+        questions: [
+          {
+            q: 'What kind of error are you seeing?',
+            options: [
+              { label: '🔌 Connection refused / timeout', nextA: 1 },
+              { label: '🧪 Conformance test failure', nextA: 1 },
+              { label: '📝 API schema mismatch', nextA: 1 }
+            ]
+          },
+          {
+            q: 'Is the provider service running and accessible?',
+            options: [
+              { label: '✅ Yes, it\'s running', nextA: 2 },
+              { label: '❌ No, it\'s down or unreachable', nextA: 2 }
+            ]
+          },
+          {
+            q: 'Does your provider implement all required ABC methods?',
+            options: [
+              { label: '✅ Yes — store, query, get, delete all implemented', nextA: 3 },
+              { label: '❌ No — some methods are missing or incomplete', nextA: 3 }
+            ]
+          },
+          {
+            q: 'Are you using the correct API version and schema?',
+            options: [
+              { label: '✅ Yes, the API version matches', nextA: 4 },
+              { label: '❌ No, there\'s a version mismatch', nextA: 4 }
+            ]
+          },
+          {
+            q: 'Have you checked the provider logs for errors?',
+            options: [
+              { label: '✅ Yes — there are specific error messages', nextA: 'done' },
+              { label: '❌ No — I need to enable logging', nextA: 'done' }
+            ]
+          }
+        ]
+      },
+      'slow-response': {
+        label: 'Slow Response',
+        icon: '🐢',
+        questions: [
+          {
+            q: 'Where is the bottleneck? Check the trace timing.',
+            options: [
+              { label: '🧠 Memory query is slow (>100ms)', nextA: 1 },
+              { label: '📚 Knowledge query is slow (>200ms)', nextA: 1 },
+              { label: '⚙️ Policy evaluation is slow', nextA: 1 },
+              { label: '🔗 Context Builder assembly is slow', nextA: 1 }
+            ]
+          },
+          {
+            q: 'How many providers are configured?',
+            options: [
+              { label: '1-2 providers', nextA: 2 },
+              { label: '3-4 providers', nextA: 2 },
+              { label: '5+ providers', nextA: 2 }
+            ]
+          },
+          {
+            q: 'Is the embedding model local or remote?',
+            options: [
+              { label: '🌐 Remote API (OpenAI, etc.) — adds latency', nextA: 3 },
+              { label: '💻 Local model — check CPU/GPU usage', nextA: 3 }
+            ]
+          },
+          {
+            q: 'Are you running in production or development?',
+            options: [
+              { label: '🚀 Production — need p99 < 200ms', nextA: 4 },
+              { label: '🧪 Development/debug mode', nextA: 4 }
+            ]
+          },
+          {
+            q: 'Have you reviewed the trace timestamps for each step?',
+            options: [
+              { label: '✅ Yes — I see which step is slowest', nextA: 'done' },
+              { label: '❌ No — I need to enable detailed timing', nextA: 'done' }
+            ]
+          }
+        ]
+      }
+    };
+
+    const fixes = {
+      'no-memory': {
+        title: '🔧 Memory Retrieval Fix',
+        fix: `<div class="fix-box">
+          <h4>✅ Step 1: Configure a Memory Provider</h4>
+          <p>If no provider is configured, add one:</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;">pip install memory-platform<br/># InMemory is the default — no setup needed</code>
+        </div>
+        <div class="fix-box">
+          <h4>✅ Step 2: Run Conformance Tests</h4>
+          <p>Validate your provider against the Gold Standard:</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;">python -m pytest tests/test_mock_providers.py -v</code>
+        </div>
+        <div class="fix-box">
+          <h4>✅ Step 3: Check Policy Engine Logs</h4>
+          <p>Use the policy simulator to check if memories are being filtered:</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;">python tools/policy_simulator.py --content "your content" --importance critical</code>
+          <p>If memories are below threshold, either <strong>increase importance</strong> of the content or <strong>lower the threshold</strong> in <code>config/production.yaml</code>.</p>
+        </div>
+        <div class="fix-box">
+          <h4>✅ Step 4: Verify Context Builder Config</h4>
+          <p>Ensure your provider is included in the Context Builder configuration.</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;"># config/production.yaml<br/>context:<br/>&nbsp;&nbsp;providers: [inmemory, mem0, obsidian]<br/>&nbsp;&nbsp;max_memories: 20</code>
+        </div>`,
+        mermaid: `graph TD
+    A["🧠 No Memory"] --> B["🔌 Configure Provider"]
+    B --> C["🧪 Run Conformance Tests"]
+    C --> D["⚙️ Check Policy Engine"]
+    D --> E["🔗 Verify Context Builder"]
+    E --> F["✅ Fixed!"]
+    style F fill:#3fb95022,stroke:#3fb950`
+      },
+      'wrong-context': {
+        title: '🔧 Wrong Context Fix',
+        fix: `<div class="fix-box">
+          <h4>✅ Step 1: Adjust Policy Engine Threshold</h4>
+          <p>Increase the importance threshold to filter out low-relevance memories:</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;"># config/production.yaml<br/>policy:<br/>&nbsp;&nbsp;importance_threshold: 5.0  # Increase from current</code>
+        </div>
+        <div class="fix-box">
+          <h4>✅ Step 2: Increase Recency Weight</h4>
+          <p>Make recency score more influential so newer memories rank higher:</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;"># config/production.yaml<br/>context:<br/>&nbsp;&nbsp;recency_weight: 0.6  # Increase from 0.5<br/>&nbsp;&nbsp;importance_weight: 0.4</code>
+        </div>
+        <div class="fix-box">
+          <h4>✅ Step 3: Reduce max_memories</h4>
+          <p>Limit how many memories are included in each context:</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;"># config/production.yaml<br/>context:<br/>&nbsp;&nbsp;max_memories: 10  # Reduce from 20</code>
+        </div>
+        <div class="fix-box warning-box">
+          <h4>⚠️ Pro Tip</h4>
+          <p>Use the trace system to see exactly which memories are being included. Run <code>python tools/provider_inspector.py</code> to audit your memory quality.</p>
+        </div>`,
+        mermaid: `graph TD
+    A["📦 Wrong Context"] --> B["⚙️ Raise Threshold"]
+    B --> C["📊 Tune Recency Weight"]
+    C --> D["📏 Limit max_memories"]
+    D --> E["✅ Clean Context!"]
+    style E fill:#3fb95022,stroke:#3fb950`
+      },
+      'provider-error': {
+        title: '🔧 Provider Error Fix',
+        fix: `<div class="fix-box">
+          <h4>✅ Step 1: Verify Provider Connectivity</h4>
+          <p>Check if the provider service is running and reachable:</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;">curl -X GET http://localhost:8000/api/v1/health<br/># Expected: {"status": "ok"}</code>
+        </div>
+        <div class="fix-box">
+          <h4>✅ Step 2: Implement All ABC Methods</h4>
+          <p>Ensure your provider implements every method in the ABC:</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;">from memory_platform.contracts.base import MemoryProvider<br/><br/>class MyProvider(MemoryProvider):<br/>&nbsp;&nbsp;def store(self, memory): ...<br/>&nbsp;&nbsp;def query(self, query): ...<br/>&nbsp;&nbsp;def get(self, id): ...<br/>&nbsp;&nbsp;def delete(self, id): ...</code>
+        </div>
+        <div class="fix-box">
+          <h4>✅ Step 3: Check API Version Compatibility</h4>
+          <p>Ensure you're using the correct API version. The current stable version is v1.0 (FROZEN).</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;"># specs/FREEZE-v1.0.md contains the frozen contract</code>
+        </div>
+        <div class="fix-box warning-box">
+          <h4>⚠️ Still stuck?</h4>
+          <p>Run <code>python tools/provider_inspector.py</code> for a comprehensive diagnostic of your provider's state.</p>
+        </div>`,
+        mermaid: `graph TD
+    A["🔌 Provider Error"] --> B["🔍 Check Connectivity"]
+    B --> C["📋 Implement ABC"]
+    C --> D["🔖 Verify API Version"]
+    D --> E["✅ Provider Working!"]
+    style E fill:#3fb95022,stroke:#3fb950`
+      },
+      'slow-response': {
+        title: '🔧 Performance Fix',
+        fix: `<div class="fix-box">
+          <h4>✅ Step 1: Identify the Bottleneck</h4>
+          <p>Review the trace timestamps to find which step is slowest. Common culprits:</p>
+          <ul>
+            <li>🧠 <strong>Memory queries</strong> → check index, reduce result count</li>
+            <li>📚 <strong>Knowledge lookups</strong> → use caching, reduce providers</li>
+            <li>⚙️ <strong>Policy evaluations</strong> → simplify rules</li>
+          </ul>
+        </div>
+        <div class="fix-box">
+          <h4>✅ Step 2: Reduce Provider Count</h4>
+          <p>Each provider adds latency. In production, use no more than 2-3 providers:</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;"># config/production.yaml<br/>context:<br/>&nbsp;&nbsp;providers: [inmemory, obsidian]  # Reduce from 5</code>
+        </div>
+        <div class="fix-box">
+          <h4>✅ Step 3: Optimize Embedding Calls</h4>
+          <p>If using remote embeddings, consider caching or switching to local:</p>
+          <code style="display:block;padding:12px;margin:10px 0;background:var(--bg-primary);border-radius:6px;"># config/production.yaml<br/>embeddings:<br/>&nbsp;&nbsp;cache_enabled: true<br/>&nbsp;&nbsp;batch_size: 10</code>
+        </div>
+        <div class="fix-box warning-box">
+          <h4>⚠️ Target Metrics</h4>
+          <p>Aim for: Memory query &lt;50ms, Knowledge query &lt;100ms, Total &lt;200ms p99.</p>
+        </div>`,
+        mermaid: `graph TD
+    A["🐢 Slow Response"] --> B["🔍 Find Bottleneck"]
+    B --> C["📉 Reduce Providers"]
+    C --> D["⚡ Optimize Embeddings"]
+    D --> E["✅ Fast Response!"]
+    style E fill:#3fb95022,stroke:#3fb950`
+      }
+    };
+
+    let currentSymptom = null;
+    let currentQ = 0;
+    let answers = [];
+
+    function startWizard(symptomKey) {
+      currentSymptom = symptomKey;
+      currentQ = 0;
+      answers = [];
+
+      document.getElementById('symptomPicker').style.display = 'none';
+      document.getElementById('wizardPanel').style.display = 'block';
+      document.getElementById('restartBtn').style.display = 'inline-block';
+
+      renderProgress();
+      renderQuestion();
+    }
+
+    function renderProgress() {
+      const bar = document.getElementById('progressBar');
+      const symptom = symptoms[currentSymptom];
+      const total = symptom.questions.length;
+      bar.innerHTML = '';
+      for (let i = 0; i < total + 1; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'progress-dot';
+        if (i < currentQ) dot.classList.add('done');
+        else if (i === currentQ) dot.classList.add('active');
+        bar.appendChild(dot);
+      }
+    }
+
+    function renderQuestion() {
+      const symptom = symptoms[currentSymptom];
+      const fix = fixes[currentSymptom];
+      const total = symptom.questions.length;
+      const content = document.getElementById('wizardContent');
+
+      // Update header
+      document.getElementById('qProgress').textContent = `Question ${currentQ + 1} of ${total}`;
+
+      if (currentQ < total) {
+        const q = symptom.questions[currentQ];
+
+        document.getElementById('qNumber').textContent = currentQ + 1;
+        document.getElementById('qTitle').textContent = 'Diagnostic Question';
+
+        let html = `<p>${q.q}</p><div class="option-group">`;
+        q.options.forEach((opt, i) => {
+          const nextLabel = opt.nextA === 'done' ? 'Show Fix' : `→ Question ${parseInt(opt.nextA) + 1}`;
+          html += `<div class="option-btn" onclick="selectOption(${i})">
+            ${opt.label}
+            <span style="float:right;color:var(--text-muted);font-size:0.8rem;">${nextLabel}</span>
+          </div>`;
+        });
+        html += `</div>`;
+        content.innerHTML = html;
+
+        document.getElementById('prevQBtn').disabled = currentQ === 0;
+        document.getElementById('nextQBtn').disabled = true; // Must select an option
+
+      } else {
+        // Show fix
+        document.getElementById('qNumber').textContent = '✅';
+        document.getElementById('qTitle').textContent = fix.title;
+
+        content.innerHTML = `
+          ${fix.fix}
+          <div class="mermaid-trouble" style="margin-top:16px;">
+            <pre class="mermaid">${fix.mermaid}</pre>
+          </div>
+        `;
+
+        document.getElementById('prevQBtn').disabled = false;
+        document.getElementById('nextQBtn').style.display = 'none';
+        setTimeout(() => { try { mermaid.run(); } catch(e) {} }, 100);
+      }
+
+      renderProgress();
+    }
+
+    function selectOption(idx) {
+      const symptom = symptoms[currentSymptom];
+      const q = symptom.questions[currentQ];
+      const opt = q.options[idx];
+
+      // Visual selection
+      document.querySelectorAll('.option-btn').forEach((el, i) => {
+        el.classList.toggle('selected', i === idx);
+      });
+
+      answers.push(opt.label);
+
+      // Enable next button
+      const nextBtn = document.getElementById('nextQBtn');
+      nextBtn.disabled = false;
+
+      // Store which option was selected
+      nextBtn.dataset.nextA = opt.nextA;
+    }
+
+    function nextQuestion() {
+      const nextA = document.getElementById('nextQBtn').dataset.nextA;
+      if (nextA === 'done') {
+        currentQ = symptoms[currentSymptom].questions.length; // Go to fix
+      } else {
+        currentQ++;
+      }
+      renderQuestion();
+
+      // Reset next button state
+      const nextBtn = document.getElementById('nextQBtn');
+      nextBtn.dataset.nextA = '';
+    }
+
+    function prevQuestion() {
+      if (currentQ > 0) {
+        currentQ--;
+        answers.pop();
+        renderQuestion();
+
+        const nextBtn = document.getElementById('nextQBtn');
+        nextBtn.style.display = 'inline-block';
+        nextBtn.disabled = false;
+      }
+    }
+
+    function restartWizard() {
+      currentSymptom = null;
+      currentQ = 0;
+      answers = [];
+
+      document.getElementById('symptomPicker').style.display = 'block';
+      document.getElementById('wizardPanel').style.display = 'none';
+      document.getElementById('restartBtn').style.display = 'none';
+      document.getElementById('nextQBtn').style.display = 'inline-block';
+
+      document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('active'));
+    }
+
+    // Symptom selection
+    document.querySelectorAll('.symptom-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.symptom-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        startWizard(this.dataset.symptom);
+      });
+    });
+  </script>
+</body>
+</html>
