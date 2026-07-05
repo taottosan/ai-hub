@@ -14,41 +14,33 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { title: 'Home', slug: '' },
   {
-    title: 'Architecture',
+    title: 'Academy',
     children: [
-      { title: 'Overview', slug: 'philosophy' },
-      { title: 'ADR-001', slug: 'adr/ADR-0001-why-memory-platform' },
-      { title: 'ADR-002', slug: 'adr/ADR-0002-why-single-api' },
-      { title: 'ADR-003', slug: 'adr/ADR-0003-why-provider-adapter' },
-      { title: 'ADR-004', slug: 'adr/ADR-0004-why-event-bus' },
-      { title: 'ADR-005', slug: 'adr/ADR-0005-why-mem0-honcho' },
-      { title: 'ADR-006', slug: 'adr/ADR-0006-why-context-builder' },
-      { title: 'ADR-007', slug: 'adr/ADR-0007-why-policy-engine' },
-      { title: 'ADR-008', slug: 'adr/ADR-0008-why-monorepo' },
-      { title: 'ADR-009', slug: 'adr/ADR-0009-why-inprocess-eventbus' },
-      { title: 'ADR-010', slug: 'adr/ADR-0010-why-context-budget' },
-      { title: 'ADR-012', slug: 'adr/ADR-0012-archive-role' },
+      { title: 'Overview', slug: 'academy' },
+      { title: 'Architecture', slug: 'academy/architecture' },
+      { title: 'Memory vs Knowledge', slug: 'academy/memory-vs-knowledge' },
+      { title: 'Providers', slug: 'academy/providers' },
+      { title: 'Workflow', slug: 'academy/workflow' },
+      { title: 'AI University', slug: 'academy/ai-university' },
+      { title: 'Getting Started', slug: 'academy/getting-started' },
     ],
   },
   {
-    title: 'Evaluation',
+    title: 'ADR',
     children: [
-      { title: 'Benchmark', slug: 'benchmark' },
-      { title: 'Conformance', slug: 'conformance' },
-      { title: 'Governance', slug: 'governance' },
-      { title: 'Obsidian Adapter', slug: 'obsidian-adapter-evaluation' },
-      { title: 'Mem0 Adapter', slug: 'mem0-adapter-evaluation' },
-      { title: 'Skills Adapter', slug: 'skills-adapter-evaluation' },
+      { title: 'ADR Overview', slug: 'academy/adr' },
     ],
   },
   {
-    title: 'Planning',
+    title: 'Dashboard',
     children: [
-      { title: 'Phase 3 Scope', slug: 'phase-3-scope' },
-      { title: 'Phase 3.5 Scope', slug: 'phase-3.5-scope' },
-      { title: 'Freeze Report v1', slug: 'platform-freeze-report-v1' },
+      { title: 'System', slug: 'dashboard/system' },
+      { title: 'Flow', slug: 'dashboard/flow' },
+      { title: 'Providers', slug: 'dashboard/providers' },
+      { title: 'Trace', slug: 'dashboard/trace' },
     ],
   },
+  { title: 'Status', slug: 'status' },
 ]
 
 export default function Sidebar() {
@@ -57,7 +49,7 @@ export default function Sidebar() {
 
   function isActive(slug?: string): boolean {
     if (!slug) return pathname === '/'
-    return pathname === `/mdx/${slug}` || pathname.startsWith(`/mdx/${slug}/`)
+    return pathname === `/${slug}` || pathname.startsWith(`/${slug}/`)
   }
 
   function toggleGroup(title: string) {
@@ -79,7 +71,7 @@ export default function Sidebar() {
             return (
               <Link
                 key={item.title}
-                href={item.slug ? `/mdx/${item.slug}` : '/'}
+                href={item.slug ? `/${item.slug}` : '/'}
                 className={cn(
                   'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   isActive(item.slug)
@@ -91,42 +83,36 @@ export default function Sidebar() {
               </Link>
             )
           }
-
-          const isCollapsed = collapsed[item.title]
-
           return (
-            <div key={item.title} className="space-y-0.5">
+            <div key={item.title}>
               <button
                 onClick={() => toggleGroup(item.title)}
                 className={cn(
-                  'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider',
-                  'text-surface-500 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
+                  'flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
                 )}
-                aria-expanded={!isCollapsed}
               >
                 <svg
-                  className={cn(
-                    'h-3 w-3 transition-transform',
-                    isCollapsed ? '-rotate-90' : '',
-                  )}
-                  viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  className={cn('h-4 w-4 transition-transform', collapsed[item.title] ? '' : 'rotate-90')}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  <path d="m9 18 6-6-6-6" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
                 {item.title}
               </button>
-
-              {!isCollapsed && (
-                <div className="ml-1 space-y-0.5 border-l-2 border-surface-200 pl-2 dark:border-surface-700">
+              {!collapsed[item.title] && (
+                <div className="ml-4 space-y-1">
                   {item.children.map((child) => (
                     <Link
                       key={child.title}
-                      href={`/mdx/${child.slug}`}
+                      href={`/${child.slug}`}
                       className={cn(
-                        'block rounded-md px-3 py-1.5 text-sm transition-colors',
+                        'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors',
                         isActive(child.slug)
                           ? 'bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300'
-                          : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
+                          : 'text-surface-500 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
                       )}
                     >
                       {child.title}
