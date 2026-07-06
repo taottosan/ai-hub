@@ -26,3 +26,8 @@ debug.log
 *.tsbuildinfo
 next-env.d.ts
 .next.bak
+
+# playwright
+tests/visual-regression-snapshots/
+playwright-report/
+test-results/

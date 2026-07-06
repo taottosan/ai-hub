@@ -3,14 +3,13 @@ import Link from 'next/link'
 import './globals.css'
 import Sidebar from '@/components/Sidebar'
 import Search from '@/components/Search'
-import ThemeToggle from '@/components/ThemeToggle'
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Memory Platform Academy',
-    default: 'Memory Platform Academy',
+    template: '%s | AI Hub',
+    default: 'AI Hub — Honcho Cloud Runtime',
   },
-  description: 'Learn the architecture, ADRs, and internals of the AI Memory Platform',
+  description: 'AI Operations Portal — Dashboard, Academy, Provider Explorer',
 }
 
 export default function RootLayout({
@@ -19,9 +18,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
+    <html lang="en" className="h-full dark" suppressHydrationWarning>
       <head>
-        {/* Inter font — variable weight, high legibility */}
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -29,31 +28,44 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="flex h-full flex-col">
+      <body className="flex h-full flex-col bg-[#0f1117] text-[#e6edf3] antialiased">
         {/* Skip-to-content link */}
         <a href="#main-content" className="skip-to-content">
           Skip to content
         </a>
 
-        {/* ── Header ── */}
-        <header className="sticky top-0 z-40 border-b border-surface-200 bg-white/95 backdrop-blur-sm dark:border-surface-800 dark:bg-surface-950/95">
+        {/* ── Header / Top Bar ── */}
+        <header className="sticky top-0 z-40 border-b border-[#2b3140] bg-[#171a21]/95 backdrop-blur-sm">
           <div className="mx-auto flex h-14 max-w-8xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+            {/* Brand */}
             <Link
               href="/"
-              className="flex items-center gap-2 text-lg font-bold text-surface-900 dark:text-surface-50"
+              className="flex items-center gap-2 text-lg font-bold text-[#e6edf3] shrink-0"
             >
               <span className="flex h-7 w-7 items-center justify-center rounded-md bg-brand-500 text-xs font-bold text-white">
-                MP
+                AH
               </span>
-              <span className="hidden sm:inline">Memory Platform Academy</span>
+              <span className="hidden sm:inline">AI Hub</span>
             </Link>
 
+            {/* Environment tag */}
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-brand-500/30 bg-brand-500/10 px-2.5 py-0.5 text-xs font-medium text-brand-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+              production v1.1.0
+            </span>
+
+            {/* Spacer */}
             <div className="flex-1" />
 
-            <Search />
+            {/* Search */}
+            <div className="max-w-xs flex-1">
+              <Search />
+            </div>
 
-            {/* Theme toggle */}
-            <ThemeToggle />
+            {/* Version info */}
+            <span className="hidden lg:inline text-xs text-[#5c6570] font-mono">
+              build 525f771
+            </span>
           </div>
         </header>
 
@@ -63,21 +75,22 @@ export default function RootLayout({
 
           <main
             id="main-content"
-            className="flex-1 overflow-y-auto px-4 py-8 sm:px-6 lg:px-8"
+            className="flex-1 overflow-y-auto"
           >
-            <div className="mx-auto max-w-4xl">
-              {children}
-            </div>
+            {children}
 
             {/* Footer */}
-            <footer className="mt-16 border-t border-surface-200 pt-6 text-center text-xs text-surface-400 dark:border-surface-800">
-              <p>Memory Platform Academy &mdash; Built with Next.js, MDX, and ☕</p>
+            <footer className="border-t border-[#2b3140] bg-[#0f1117] py-4 text-center text-xs text-[#5c6570]">
+              <p>
+                AI Hub — Honcho Cloud Runtime{' · '}
+                <a href="/status" className="text-brand-400 hover:underline">
+                  v1.1.0
+                </a>
+                {' · '}Build 525f771{' · '}Updated 2026-07-06
+              </p>
             </footer>
           </main>
-          <footer className="border-t border-[#30363d] bg-[#0d1117] py-3 px-6 text-center text-xs text-[#8b949e]">
-            Memory Platform <a href="/status" className="text-[#58a6ff] hover:underline">v1.0.0</a> — Build 525f771 — Updated 2026-07-04
-          </footer>
-          </div>
+        </div>
       </body>
     </html>
   )

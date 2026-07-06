@@ -94,7 +94,7 @@ export default function Search() {
     <div className="relative w-full max-w-md">
       <div className="relative">
         <svg
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-surface-400"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5c6570]"
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth="2"
@@ -107,8 +107,8 @@ export default function Search() {
         <input
           ref={inputRef}
           type="search"
-          placeholder="Search documentation…"
-          aria-label="Search documentation"
+          placeholder="Search…"
+          aria-label="Search"
           aria-expanded={isOpen && results.length > 0}
           role="combobox"
           aria-controls="search-results"
@@ -117,11 +117,9 @@ export default function Search() {
           onFocus={() => setIsOpen(true)}
           onBlur={() => setTimeout(() => setIsOpen(false), 200)}
           className={cn(
-            'w-full rounded-lg border border-surface-300 bg-white py-2 pl-10 pr-4',
-            'text-sm text-surface-900 placeholder-surface-400',
-            'focus:border-brand-500 focus:ring-2 focus:ring-brand-200 focus:outline-hidden',
-            'dark:border-surface-600 dark:bg-surface-800 dark:text-surface-100 dark:placeholder-surface-500',
-            'dark:focus:border-brand-400 dark:focus:ring-brand-800',
+            'w-full rounded-lg border border-[#2b3140] bg-[#1e222d] py-2 pl-10 pr-4',
+            'text-sm text-[#e6edf3] placeholder-[#5c6570]',
+            'focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-hidden',
           )}
         />
       </div>
@@ -132,8 +130,7 @@ export default function Search() {
           role="listbox"
           className={cn(
             'absolute top-full z-50 mt-1 w-full overflow-hidden rounded-lg',
-            'border border-surface-200 bg-white shadow-lg',
-            'dark:border-surface-700 dark:bg-surface-800',
+            'border border-[#2b3140] bg-[#171a21] shadow-lg',
           )}
         >
           {results.map((result) => (
@@ -143,19 +140,18 @@ export default function Search() {
                 onClick={() => { setIsOpen(false); setQuery('') }}
                 className={cn(
                   'flex flex-col gap-0.5 px-4 py-3 text-left',
-                  'hover:bg-surface-50 focus-visible:bg-surface-50 outline-hidden',
-                  'dark:hover:bg-surface-700 dark:focus-visible:bg-surface-700',
+                  'hover:bg-[#1e222d] focus-visible:bg-[#1e222d] outline-hidden',
                 )}
               >
-                <span className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                <span className="text-sm font-medium text-[#e6edf3]">
                   {result.title}
                 </span>
                 {result.description && (
-                  <span className="text-xs text-surface-500 line-clamp-1">
+                  <span className="text-xs text-[#8b949e] line-clamp-1">
                     {result.description}
                   </span>
                 )}
-                <span className="mt-0.5 self-start rounded bg-surface-100 px-1.5 py-0.5 text-2xs text-surface-500 dark:bg-surface-700 dark:text-surface-400">
+                <span className="mt-0.5 self-start rounded bg-[#2b3140] px-1.5 py-0.5 text-[10px] text-[#8b949e]">
                   {result.category}
                 </span>
               </Link>

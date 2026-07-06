@@ -1,12 +1,8 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
-  Brain,
   Search,
-  BookOpen,
-  FileText,
-  Wrench,
   MessageSquare,
   CheckCircle,
   HelpCircle,
@@ -15,505 +11,315 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
-  Loader2,
+  FlaskConical,
+  Database,
+  Brain,
+  Server,
+  Zap,
+  Activity,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { fetchLatestFlow, NO_DATA } from '@/lib/honcho'
+import type { HonchoFlow, HonchoFlowEntry } from '@/lib/honcho'
 
-/* ── Types ── */
-
-type HopStatus = 'idle' | 'running' | 'hit' | 'miss' | 'fail'
-
-interface Hop {
+/* ── Honcho Cloud Pipeline Stages ── */
+interface StageDef {
   id: string
   label: string
   icon: typeof Brain
   description: string
-  status: HopStatus
+}
+
+const HONCHO_STAGES: StageDef[] = [
+  { id: 'user_request', label: 'User Request', icon: MessageSquare, description: 'Parse and validate incoming request' },
+  { id: 'session',      label: 'Session',      icon: Database,      description: 'Load or create Honcho session' },
+  { id: 'honcho_search', label: 'Honcho Search', icon: Search,     description: 'Search Honcho cloud memory' },
+  { id: 'hit_miss',     label: 'HIT / MISS',   icon: Activity,     description: 'Evaluate memory relevance' },
+  { id: 'memory_llm',   label: 'Memory → LLM', icon: Brain,        description: 'Augment LLM with retrieved context' },
+  { id: 'response',     label: 'Response',      icon: Sparkles,     description: 'Stream final response' },
+  { id: 'honcho_conclude', label: 'Honcho Conclude', icon: Zap,    description: 'Store interaction in Honcho' },
+  { id: 'maintenance',  label: 'Maintenance',   icon: Server,       description: 'Post-processing queue' },
+]
+
+/* ── Pipeline step status mapping ── */
+function statusForStep(step: string, entries: HonchoFlowEntry[]): {
+  status: 'idle' | 'ok' | 'miss' | 'error'
   latency: number | null
+} {
+  const match = entries.find((e) => e.step === step)
+  if (!match) return { status: 'idle', latency: null }
+
+  if (match.status === 'ok') return { status: 'ok', latency: match.latency_ms }
+  if (match.status === 'miss') return { status: 'miss', latency: match.latency_ms }
+  return { status: 'error', latency: match.latency_ms }
 }
 
-interface Trace {
-  id: string
-  timestamp: string
-  hops: Hop[]
-  totalLatency: number
-  question: string
-}
-
-/* ── Hop definitions ── */
-
-const HOP_CONFIG: Omit<Hop, 'status' | 'latency'>[] = [
-  { id: 'question', label: 'Question', icon: MessageSquare, description: 'Parse and embed user input' },
-  { id: 'memory',   label: 'Memory',   icon: Search,      description: 'Query vector store for relevant memories' },
-  { id: 'skills',   label: 'Skills',   icon: Brain,       description: 'Match agent skills to request' },
-  { id: 'obsidian', label: 'Obsidian', icon: BookOpen,    description: 'Search knowledge graph for context' },
-  { id: 'tool',     label: 'Tool',     icon: Wrench,      description: 'Execute external tool calls' },
-  { id: 'answer',   label: 'Answer',   icon: Sparkles,    description: 'Assemble and return final response' },
-]
-
-const EXAMPLE_QUESTIONS = [
-  'How do I configure memory retention policies?',
-  'What providers are supported in phase 3?',
-  'Show me the ADR for context budgeting',
-  'Explain the policy engine architecture',
-  'How does Obsidian integration work?',
-]
-
-/* ── Random helpers ── */
-
-function randomLatency(min = 80, max = 600): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min
-}
-
-function pickQuestion(): string {
-  return EXAMPLE_QUESTIONS[Math.floor(Math.random() * EXAMPLE_QUESTIONS.length)]
-}
-
-function generateId(): string {
-  return `trace-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-}
-
-function randomOutcome(weights = { hit: 0.65, miss: 0.25, fail: 0.10 }): HopStatus {
-  const r = Math.random()
-  if (r < weights.hit) return 'hit'
-  if (r < weights.hit + weights.miss) return 'miss'
-  return 'fail'
-}
-
-/* ── Hop badge rendering ── */
-
-function HopBadge({ status }: { status: HopStatus }) {
+/* ── Step badge ── */
+function StepBadge({ status }: { status: string }) {
   if (status === 'idle') return null
 
-  const config = {
-    running: { Icon: Loader2,  className: 'text-brand-500 animate-spin',             label: '…' },
-    hit:     { Icon: CheckCircle, className: 'text-success',                         label: 'HIT' },
-    miss:    { Icon: HelpCircle,  className: 'text-warning',                         label: 'MISS' },
-    fail:    { Icon: XCircle,     className: 'text-danger',                          label: 'FAIL' },
-  }[status]
-
-  const { Icon, className, label } = config
+  const config: Record<string, { icon: typeof CheckCircle; className: string; label: string }> = {
+    ok:    { icon: CheckCircle, className: 'text-green-500', label: 'OK' },
+    miss:  { icon: HelpCircle,  className: 'text-orange-500', label: 'MISS' },
+    error: { icon: XCircle,     className: 'text-red-500', label: 'ERROR' },
+  }
+  const c = config[status] ?? config.error
 
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-semibold" aria-label={label}>
-      <Icon className={cn('h-3.5 w-3.5', className)} aria-hidden="true" />
-      <span className={className}>{label}</span>
+    <span className="inline-flex items-center gap-1 text-xs font-semibold" aria-label={c.label}>
+      <c.icon className="h-3.5 w-3.5" aria-hidden="true" />
+      <span className={c.className}>{c.label}</span>
     </span>
   )
 }
 
 /* ── Status dot ── */
-
-function StatusDot({ status }: { status: HopStatus }) {
-  const colors: Record<HopStatus, string> = {
-    idle:    'bg-surface-300 dark:bg-surface-600',
-    running: 'bg-brand-500 animate-pulse',
-    hit:     'bg-success',
-    miss:    'bg-warning',
-    fail:    'bg-danger',
+function StatusDot({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    idle:  'bg-[#2b3140]',
+    ok:    'bg-green-500',
+    miss:  'bg-orange-500',
+    error: 'bg-red-500',
   }
   return (
     <span
-      className={cn('inline-block h-2.5 w-2.5 rounded-full', colors[status])}
+      className={cn('inline-block h-2.5 w-2.5 rounded-full', colors[status] ?? colors.idle)}
       aria-hidden="true"
     />
   )
 }
 
-/* ── Main component ── */
-
-export default function RequestFlowPage() {
-  const [currentTrace, setCurrentTrace] = useState<Omit<Trace, 'hops'> | null>(null)
-  const [traces, setTraces] = useState<Trace[]>([])
-  const [running, setRunning] = useState(false)
-  const [explaining, setExplaining] = useState<string | null>(null)
-  const pipelineRef = useRef<HTMLDivElement>(null)
-
-  // Reset all hops to idle
-  function idleHops(): Hop[] {
-    return HOP_CONFIG.map(h => ({ ...h, status: 'idle' as HopStatus, latency: null }))
-  }
-
-  // Run a new trace with animation
-  const runTrace = useCallback(async () => {
-    if (running) return
-    setRunning(true)
-    setExplaining(null)
-
-    const traceId = generateId()
-    const question = pickQuestion()
-    const hops = idleHops()
-    let totalLatency = 0
-
-    setCurrentTrace({ id: traceId, timestamp: new Date().toLocaleTimeString(), question, totalLatency })
-
-    for (let i = 0; i < hops.length; i++) {
-      // Mark current hop as running
-      hops[i].status = 'running'
-      setTraces(prev => {
-        const copy = [...prev]
-        if (copy.length > 0 && copy[copy.length - 1]?.id === traceId) {
-          copy[copy.length - 1] = { ...copy[copy.length - 1], hops: [...hops] }
-        }
-        return copy
-      })
-
-      // Simulate processing delay
-      const latency = randomLatency(200, 700)
-      await new Promise(resolve => setTimeout(resolve, latency))
-
-      // Determine outcome
-      // Last hop (answer) always hits
-      const status: HopStatus = i === hops.length - 1 ? 'hit' : randomOutcome()
-      hops[i] = { ...hops[i], status, latency }
-      totalLatency += latency
-
-      // Update displayed trace
-      setTraces(prev => {
-        const copy = [...prev]
-        const existing = copy.find(t => t.id === traceId)
-        if (existing) {
-          Object.assign(existing, { hops: [...hops], totalLatency })
-        } else {
-          copy.push({ id: traceId, timestamp: new Date().toLocaleTimeString(), hops: [...hops], totalLatency, question })
-        }
-        return [...copy]
-      })
-
-      // Scroll pipeline into view on first hop
-      if (i === 0) {
-        pipelineRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }
-    }
-
-    setRunning(false)
-  }, [running])
-
-  // Clear all traces
-  function clearTraces() {
-    setTraces([])
-    setCurrentTrace(null)
-    setExplaining(null)
-  }
-
-  // Generate explanation for a trace
-  function toggleExplain(traceId: string) {
-    setExplaining(prev => prev === traceId ? null : traceId)
-  }
-
-  // The most recent trace (for the live pipeline display)
-  const latestTrace = traces.length > 0 ? traces[traces.length - 1] : null
-
+/* ── Empty state ── */
+function EmptyState() {
   return (
-    <div className="min-h-screen bg-surface-50 dark:bg-surface-950">
-      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-        {/* ── Header ── */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-surface-900 dark:text-surface-50">
-            Request Flow
-          </h1>
-          <p className="mt-2 text-surface-500 dark:text-surface-400">
-            Real-time trace visualization — watch a request flow through Memory → Skills → Obsidian → Tool → Answer
-          </p>
-        </div>
-
-        {/* ── Pipeline visualization ── */}
-        <div ref={pipelineRef} className="mb-8">
-          <div className="rounded-xl border border-surface-200 bg-white p-6 shadow-sm dark:border-surface-800 dark:bg-surface-900">
-            {/* Pipeline header */}
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100">
-                  Pipeline
-                </h2>
-                {latestTrace && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-100 px-2.5 py-0.5 text-xs font-medium text-surface-600 dark:bg-surface-800 dark:text-surface-300">
-                    <Clock className="h-3 w-3" aria-hidden="true" />
-                    {latestTrace.totalLatency}ms
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={runTrace}
-                  disabled={running}
-                  className={cn(
-                    'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition-all',
-                    running
-                      ? 'cursor-not-allowed bg-surface-200 text-surface-400 dark:bg-surface-700 dark:text-surface-500'
-                      : 'bg-brand-500 text-white hover:bg-brand-600 active:scale-[0.97] dark:bg-brand-600 dark:hover:bg-brand-500'
-                  )}
-                >
-                  <RefreshCw className={cn('h-4 w-4', running && 'animate-spin')} aria-hidden="true" />
-                  {running ? 'Tracing…' : 'New Request'}
-                </button>
-
-                {traces.length > 0 && (
-                  <button
-                    onClick={clearTraces}
-                    className="rounded-lg px-3 py-2 text-sm font-medium text-surface-500 hover:bg-surface-100 hover:text-surface-700 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-200"
-                  >
-                    Clear All
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Question display */}
-            {latestTrace && (
-              <div className="mb-6 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
-                <div className="flex items-start gap-3">
-                  <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-surface-400" aria-hidden="true" />
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wider text-surface-400">Request</p>
-                    <p className="mt-0.5 text-sm text-surface-700 dark:text-surface-200">
-                      &ldquo;{latestTrace.question}&rdquo;
-                    </p>
-                  </div>
-                  <span className="ml-auto shrink-0 text-xs text-surface-400">{latestTrace.timestamp}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Pipeline hops — horizontal layout */}
-            <div className="flex items-start justify-center gap-1 sm:gap-2">
-              {(latestTrace?.hops ?? idleHops()).map((hop, idx) => {
-                const Icon = hop.icon
-                const isActive = hop.status !== 'idle'
-                const isLast = idx === HOP_CONFIG.length - 1
-                const statusColors: Record<HopStatus, string> = {
-                  idle:    'border-surface-200 bg-white dark:border-surface-700 dark:bg-surface-800',
-                  running: 'border-brand-400 bg-brand-50 shadow-[0_0_0_2px_rgba(32,80,214,0.15)] dark:bg-brand-900/20 dark:shadow-[0_0_0_2px_rgba(32,80,214,0.3)]',
-                  hit:     'border-success bg-success/5 dark:bg-success/10',
-                  miss:    'border-warning bg-warning/5 dark:bg-warning/10',
-                  fail:    'border-danger bg-danger/5 dark:bg-danger/10',
-                }
-
-                return (
-                  <div key={hop.id} className="flex items-center gap-1 sm:gap-2">
-                    {/* Hop card */}
-                    <div
-                      className={cn(
-                        'flex min-w-[80px] flex-col items-center gap-1.5 rounded-xl border-2 p-3 text-center transition-all duration-300 sm:min-w-[100px] sm:p-4',
-                        statusColors[hop.status],
-                        isActive && hop.status !== 'running' && 'shadow-sm',
-                      )}
-                      role="region"
-                      aria-label={`${hop.label}: ${hop.status === 'idle' ? 'waiting' : hop.status}`}
-                    >
-                      <div className="relative">
-                        <Icon
-                          className={cn(
-                            'h-5 w-5 sm:h-6 sm:w-6',
-                            hop.status === 'idle' && 'text-surface-400',
-                            hop.status === 'running' && 'text-brand-500',
-                            hop.status === 'hit' && 'text-success',
-                            hop.status === 'miss' && 'text-warning',
-                            hop.status === 'fail' && 'text-danger',
-                          )}
-                          aria-hidden="true"
-                        />
-                        {/* Running spinner overlay */}
-                        {hop.status === 'running' && (
-                          <span className="absolute -right-1 -top-1 flex h-3 w-3">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75" />
-                            <span className="relative inline-flex h-3 w-3 rounded-full bg-brand-500" />
-                          </span>
-                        )}
-                      </div>
-
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-surface-500 dark:text-surface-400 sm:text-xs">
-                        {hop.label}
-                      </span>
-
-                      {/* Status badge */}
-                      <HopBadge status={hop.status} />
-
-                      {/* Latency */}
-                      {hop.latency !== null && (
-                        <span className="text-[10px] tabular-nums text-surface-400">
-                          {hop.latency}ms
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Arrow connector */}
-                    {!isLast && (
-                      <ChevronRight
-                        className={cn(
-                          'h-4 w-4 shrink-0 sm:h-5 sm:w-5',
-                          hop.status !== 'idle'
-                            ? 'text-brand-400 animate-pulse-once'
-                            : 'text-surface-300 dark:text-surface-600'
-                        )}
-                        aria-hidden="true"
-                      />
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Legend */}
-            <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-surface-100 pt-4 text-xs text-surface-500 dark:border-surface-800 dark:text-surface-400">
-              <span className="font-medium">Status:</span>
-              <span className="inline-flex items-center gap-1">
-                <CheckCircle className="h-3.5 w-3.5 text-success" aria-hidden="true" />
-                HIT — memory found
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <HelpCircle className="h-3.5 w-3.5 text-warning" aria-hidden="true" />
-                MISS — memory not found
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <XCircle className="h-3.5 w-3.5 text-danger" aria-hidden="true" />
-                FAIL — error occurred
-              </span>
-            </div>
-
-            {/* Initial empty state */}
-            {!latestTrace && (
-              <div className="py-12 text-center">
-                <Search className="mx-auto h-10 w-10 text-surface-300 dark:text-surface-600" aria-hidden="true" />
-                <p className="mt-3 text-sm text-surface-400">
-                  Click <strong>New Request</strong> to start a live trace visualization
-                </p>
-                <p className="text-xs text-surface-300 dark:text-surface-500">
-                  Each request animates through the 6 stages of the Memory Platform pipeline
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Trace history ── */}
-        {traces.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100">
-                Trace History
-              </h2>
-              <span className="text-xs text-surface-400">{traces.length} trace{traces.length !== 1 ? 's' : ''}</span>
-            </div>
-
-            {[...traces].reverse().map(trace => (
-              <div
-                key={trace.id}
-                className={cn(
-                  'rounded-xl border bg-white p-4 shadow-sm transition-all dark:bg-surface-900',
-                  trace.id === latestTrace?.id
-                    ? 'border-brand-300 dark:border-brand-700'
-                    : 'border-surface-200 dark:border-surface-800'
-                )}
-              >
-                {/* Trace header */}
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-surface-400">{trace.id}</span>
-                    {trace.id === latestTrace?.id && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-semibold text-brand-700 dark:bg-brand-900/50 dark:text-brand-300">
-                        <Sparkles className="h-3 w-3" aria-hidden="true" />
-                        Latest
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs text-surface-400">{trace.timestamp} · {trace.totalLatency}ms total</span>
-                </div>
-
-                {/* Hops summary */}
-                <div className="mb-3 flex flex-wrap gap-1.5">
-                  {trace.hops.map(hop => (
-                    <div
-                      key={hop.id}
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium',
-                        hop.status === 'hit'  && 'bg-success/10 text-success',
-                        hop.status === 'miss' && 'bg-warning/10 text-warning',
-                        hop.status === 'fail' && 'bg-danger/10 text-danger',
-                        hop.status === 'idle' && 'bg-surface-100 text-surface-400 dark:bg-surface-800',
-                        hop.status === 'running' && 'bg-brand-100 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400',
-                      )}
-                    >
-                      <StatusDot status={hop.status} />
-                      {hop.label}
-                      {hop.latency !== null && (
-                        <span className="opacity-70">({hop.latency}ms)</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Question */}
-                <p className="mb-3 text-sm text-surface-600 dark:text-surface-300">
-                  &ldquo;{trace.question}&rdquo;
-                </p>
-
-                {/* Explain button */}
-                <button
-                  onClick={() => toggleExplain(trace.id)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-surface-200 bg-surface-50 px-3 py-1.5 text-xs font-medium text-surface-600 transition-colors hover:bg-surface-100 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
-                >
-                  <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                  {explaining === trace.id ? 'Hide Explanation' : 'Explain This Answer'}
-                </button>
-
-                {/* Explanation panel */}
-                {explaining === trace.id && (
-                  <div className="mt-3 rounded-lg border border-surface-200 bg-surface-50 p-4 text-sm leading-relaxed text-surface-700 dark:border-surface-700 dark:bg-surface-800 dark:text-surface-300">
-                    <ExplainThisAnswer trace={trace} />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#2b3140] bg-[#1e222d]">
+        <FlaskConical className="h-8 w-8 text-[#8b949e]" />
       </div>
+      <h3 className="text-lg font-semibold text-[#e6edf3]">
+        No Production Data Yet
+      </h3>
+      <p className="mt-2 max-w-md text-sm text-[#8b949e]">
+        Connect Honcho Cloud to see real-time request flows through the
+        pipeline. The dashboard will populate automatically once the API
+        is reachable.
+      </p>
     </div>
   )
 }
 
-/* ── Explain This Answer component ── */
+/* ── Main component ── */
+export default function RuntimeFlowPage() {
+  const [flow, setFlow] = useState<HonchoFlow | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [connected, setConnected] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-function ExplainThisAnswer({ trace }: { trace: Trace }) {
-  const hopResults = trace.hops.map(h => {
-    if (h.status === 'hit')  return `${h.label}: ✅ Found (${h.latency}ms) — cached/matched successfully`
-    if (h.status === 'miss') return `${h.label}: ❓ Not found (${h.latency}ms) — no relevant data; fell through`
-    if (h.status === 'fail') return `${h.label}: ❌ Error (${h.latency}ms) — connection timeout or provider error`
-    return `${h.label}: ⏳ Skipped`
-  })
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    const result = await fetchLatestFlow()
+    if (result.ok) {
+      setFlow(result.data)
+      setConnected(true)
+    } else {
+      setFlow(null)
+      setConnected(false)
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+    const interval = setInterval(fetchData, 15_000)
+    return () => clearInterval(interval)
+  }, [fetchData])
+
+  /* ── Loading state ── */
+  if (loading && !flow) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight text-[#e6edf3]">
+            Runtime Flow
+          </h1>
+          <p className="mt-1 text-sm text-[#8b949e]">
+            Honcho Cloud Pipeline Stages
+          </p>
+        </div>
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <div className="flex items-center gap-3 text-[#8b949e]">
+            <Activity className="h-5 w-5 animate-pulse text-brand-500" />
+            <span className="text-sm">Connecting to Honcho Cloud…</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  /* ── Empty / not connected ── */
+  if (!connected && !flow) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight text-[#e6edf3]">
+            Runtime Flow
+          </h1>
+          <p className="mt-1 text-sm text-[#8b949e]">
+            Honcho Cloud Pipeline Stages
+          </p>
+        </div>
+        <EmptyState />
+      </div>
+    )
+  }
+
+  const steps = flow?.steps ?? []
 
   return (
-    <div className="space-y-3">
-      <p className="font-medium text-surface-900 dark:text-surface-100">
-        Trace Execution Summary
-      </p>
-
-      <ol className="space-y-1.5">
-        {hopResults.map((result, idx) => (
-          <li key={idx} className="flex items-start gap-2 text-xs">
-            <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-surface-200 text-[10px] font-bold text-surface-500 dark:bg-surface-700 dark:text-surface-400">
-              {idx + 1}
-            </span>
-            <span>{result}</span>
-          </li>
-        ))}
-      </ol>
-
-      <div className="rounded-lg border border-surface-200 bg-white p-3 text-xs dark:border-surface-700 dark:bg-surface-900">
-        <p className="mb-1 font-medium text-surface-900 dark:text-surface-100">How This Trace Was Built</p>
-        <p className="text-surface-600 dark:text-surface-400">
-          Each incoming request follows a deterministic pipeline. First, the <strong>Question</strong> is parsed and embedded.
-          The <strong>Memory</strong> hop queries the vector store for semantically similar past interactions.
-          <strong> Skills</strong> matches the request against registered agent capabilities.
-          <strong> Obsidian</strong> pulls knowledge graph context. If needed, a <strong>Tool</strong> executes external
-          calls (APIs, file reads). Finally, the <strong>Answer</strong> hop assembles everything into a coherent response.
-          Every hop records its latency and status, enabling debugging at a glance.
-        </p>
-        <p className="mt-2 text-surface-500 dark:text-surface-400">
-          Total pipeline time: <strong>{trace.totalLatency}ms</strong>
+    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+      {/* ── Header ── */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight text-[#e6edf3]">
+            Runtime Flow
+          </h1>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-0.5 text-xs font-medium text-green-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+            {connected ? 'Live' : 'Reconnecting…'}
+          </span>
+        </div>
+        <p className="mt-1 text-sm text-[#8b949e]">
+          Honcho Cloud Pipeline Stages
         </p>
       </div>
+
+      {/* ── Controls ── */}
+      <div className="mb-6 flex items-center gap-3">
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition-all',
+            loading
+              ? 'cursor-not-allowed bg-[#2b3140] text-[#8b949e]'
+              : 'bg-brand-500 text-white hover:bg-brand-600 active:scale-[0.97]',
+          )}
+        >
+          <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+          {loading ? 'Refreshing…' : 'Refresh'}
+        </button>
+
+        {flow && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1e222d] px-2.5 py-0.5 text-xs font-medium text-[#8b949e]">
+            <Clock className="h-3 w-3" />
+            {flow.total_latency_ms}ms total
+          </span>
+        )}
+      </div>
+
+      {/* ── Query display ── */}
+      {flow?.query && (
+        <div className="mb-6 rounded-lg border border-[#2b3140] bg-[#1e222d] p-3">
+          <div className="flex items-start gap-3">
+            <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-[#8b949e]" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e]">Query</p>
+              <p className="mt-0.5 text-sm text-[#e6edf3]">
+                &ldquo;{flow.query}&rdquo;
+              </p>
+            </div>
+            <span className="ml-auto shrink-0 text-xs text-[#8b949e]">
+              {flow.session_id && `session: ${flow.session_id.slice(0, 12)}…`}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Pipeline visualization ── */}
+      <div className="rounded-xl border border-[#2b3140] bg-[#1e222d] p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-[#e6edf3]">
+            Honcho Cloud Pipeline
+          </h2>
+          <span className="rounded-md bg-[#0f1117] px-2 py-0.5 text-[10px] font-mono text-[#8b949e]">
+            {steps.length}/{HONCHO_STAGES.length} stages
+          </span>
+        </div>
+
+        {/* Step cards */}
+        <div className="flex flex-wrap items-start justify-center gap-2 sm:gap-3">
+          {HONCHO_STAGES.map((stage, idx) => {
+            const { status, latency } = statusForStep(stage.id, steps)
+            const Icon = stage.icon
+            const isLast = idx === HONCHO_STAGES.length - 1
+
+            const statusBorder: Record<string, string> = {
+              idle:  'border-[#2b3140] bg-[#1e222d]',
+              ok:    'border-green-500/50 bg-green-500/5',
+              miss:  'border-orange-500/50 bg-orange-500/5',
+              error: 'border-red-500/50 bg-red-500/5',
+            }
+
+            const statusIcon: Record<string, string> = {
+              idle:  'text-[#4a5260]',
+              ok:    'text-green-500',
+              miss:  'text-orange-500',
+              error: 'text-red-500',
+            }
+
+            return (
+              <div key={stage.id} className="flex items-center gap-2 sm:gap-3">
+                <div
+                  className={cn(
+                    'flex min-w-[90px] flex-col items-center gap-1.5 rounded-xl border-2 p-3 text-center transition-all sm:min-w-[110px] sm:p-4',
+                    statusBorder[status],
+                  )}
+                  role="region"
+                  aria-label={`${stage.label}: ${status}`}
+                >
+                  <Icon className={cn('h-5 w-5 sm:h-6 sm:w-6', statusIcon[status])} aria-hidden="true" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8b949e] sm:text-xs">
+                    {stage.label}
+                  </span>
+                  <StepBadge status={status} />
+                  {latency !== null && (
+                    <span className="text-[10px] tabular-nums text-[#8b949e]">{latency}ms</span>
+                  )}
+                </div>
+
+                {!isLast && (
+                  <ChevronRight className="h-4 w-4 shrink-0 text-[#4a5260] sm:h-5 sm:w-5" aria-hidden="true" />
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Legend */}
+        <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-[#2b3140] pt-4 text-xs text-[#8b949e]">
+          <span className="font-medium text-[#e6edf3]">Status:</span>
+          <span className="inline-flex items-center gap-1">
+            <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+            OK — step completed
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <HelpCircle className="h-3.5 w-3.5 text-orange-500" />
+            MISS — no relevant data
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <XCircle className="h-3.5 w-3.5 text-red-500" />
+            ERROR — step failed
+          </span>
+        </div>
+      </div>
+
+      {/* ── Error banner ── */}
+      {error && (
+        <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-500">
+          {error}
+        </div>
+      )}
     </div>
   )
 }
